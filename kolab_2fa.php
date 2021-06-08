@@ -89,6 +89,19 @@ class kolab_2fa extends rcube_plugin
         $a_host = parse_url($args['host']);
         $hostname = $_SESSION['hostname'] = $a_host['host'] ?: $args['host'];
 
+        // Convert username to lowercase. Copied from rcmail::login()
+        $login_lc = $rcmail->config->get('login_lc', 2);
+        if ($login_lc) {
+            if ($login_lc == 2 || $login_lc === true) {
+                $args['user'] = mb_strtolower($args['user']);
+            }
+            else if (strpos($args['user'], '@')) {
+                // lowercase domain name
+                list($local, $domain) = explode('@', $args['user']);
+                $args['user'] = $local . '@' . mb_strtolower($domain);
+            }
+        }
+
         // 1. find user record (and its prefs) before IMAP login
         if ($user = rcube_user::query($args['user'], $hostname)) {
             $rcmail->config->set_user_prefs($user->get_prefs());
