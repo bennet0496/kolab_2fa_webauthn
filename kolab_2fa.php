@@ -88,37 +88,34 @@ class kolab_2fa extends rcube_plugin
         // parse $host URL
         $a_host = parse_url($args['host']);
         $hostname = $_SESSION['hostname'] = $a_host['host'] ?: $args['host'];
+        $username = !empty($_SESSION['kolab_auth_admin']) ? $_SESSION['kolab_auth_admin'] : $args['user'];
 
         // Convert username to lowercase. Copied from rcmail::login()
         $login_lc = $rcmail->config->get('login_lc', 2);
         if ($login_lc) {
             if ($login_lc == 2 || $login_lc === true) {
-                $args['user'] = mb_strtolower($args['user']);
+                $username = mb_strtolower($username);
             }
-            else if (strpos($args['user'], '@')) {
+            else if (strpos($username, '@')) {
                 // lowercase domain name
-                list($local, $domain) = explode('@', $args['user']);
-                $args['user'] = $local . '@' . mb_strtolower($domain);
+                list($local, $domain) = explode('@', $username);
+                $username = $local . '@' . mb_strtolower($domain);
             }
-        }
-
-        // 1. find user record (and its prefs) before IMAP login
-        if ($user = rcube_user::query($args['user'], $hostname)) {
-            $rcmail->config->set_user_prefs($user->get_prefs());
         }
 
         // 2a. let plugins provide the list of active authentication factors
         $lookup = $rcmail->plugins->exec_hook('kolab_2fa_lookup', array(
-            'user'    => $args['user'],
+            'user'    => $username,
             'host'    => $hostname,
-            'factors' => $rcmail->config->get('kolab_2fa_factors'),
+            'factors' => null,
             'check'   => $rcmail->config->get('kolab_2fa_check', true),
         ));
+
         if (isset($lookup['factors'])) {
             $factors = (array)$lookup['factors'];
         }
         // 2b. check storage if this user has 2FA enabled
-        else if ($lookup['check'] !== false && ($storage = $this->get_storage($args['user']))) {
+        else if ($lookup['check'] !== false && ($storage = $this->get_storage($username))) {
             $factors = (array)$storage->enumerate();
         }
 
@@ -162,14 +159,15 @@ class kolab_2fa extends rcube_plugin
      */
     public function login_verify($args)
     {
+        $this->login_verified = false;
+
         $rcmail = rcmail::get_instance();
 
-        $time  = $_SESSION['kolab_2fa_time'];
-        $nonce = $_SESSION['kolab_2fa_nonce'];
-        $factors = (array)$_SESSION['kolab_2fa_factors'];
-
-        $this->login_verified = false;
-        $expired = $time < time() - $rcmail->config->get('kolab_2fa_timeout', 120);
+        $time     = $_SESSION['kolab_2fa_time'];
+        $nonce    = $_SESSION['kolab_2fa_nonce'];
+        $factors  = (array)$_SESSION['kolab_2fa_factors'];
+        $expired  = $time < time() - $rcmail->config->get('kolab_2fa_timeout', 120);
+        $username = !empty($_SESSION['kolab_auth_admin']) ? $_SESSION['kolab_auth_admin'] : $_SESSION['username'];
 
         if (!empty($factors) && !empty($nonce) && !$expired) {
             // TODO: check signature
@@ -180,7 +178,7 @@ class kolab_2fa extends rcube_plugin
 
                 // verify the submitted code
                 $code = rcube_utils::get_input_value("_${nonce}_${method}", rcube_utils::INPUT_POST);
-                $this->login_verified = $this->verify_factor_auth($factor, $code);
+                $this->login_verified = $this->verify_factor_auth($factor, $code, $username);
 
                 // accept first successful method
                 if ($this->login_verified) {
@@ -194,6 +192,11 @@ class kolab_2fa extends rcube_plugin
             $_POST['_user'] = $_SESSION['username'];
             $_POST['_host'] = $_SESSION['host'];
             $_POST['_pass'] = $rcmail->decrypt($_SESSION['password']);
+
+            if ($_SESSION['kolab_auth_admin']) {
+                $_POST['_user']    = $_SESSION['kolab_auth_admin'];
+                $_POST['_loginas'] = $_SESSION['username'];
+            }
         }
 
         // proceed with regular login ...
@@ -208,15 +211,15 @@ class kolab_2fa extends rcube_plugin
 
         return $args;
     }
-    
+
     /**
      * Helper method to verify the given method/code tuple
      */
-    protected function verify_factor_auth($method, $code)
+    protected function verify_factor_auth($method, $code, $username)
     {
         if (strlen($code) && ($driver = $this->get_driver($method))) {
             // set properties from login
-            $driver->username  = $_SESSION['username'];
+            $driver->username = $username;
 
             try {
                 // verify the submitted code
