@@ -128,11 +128,6 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
      * Remove the given factor from the account
      */
     function remove_factor(id) {
-        if (rcmail.env.kolab_2fa_factors[id]) {
-            rcmail.env.kolab_2fa_factors[id].active = false;
-        }
-        render();
-
         var lock = rcmail.set_busy(true, 'saving');
         rcmail.http_post('plugin.kolab-2fa-save', { _method: id, _data: 'false' }, lock);
     }
@@ -184,7 +179,7 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
     function require_high_security(func, exclude)
     {
         // request 2nd factor auth
-        if (!rcmail.env.session_secured || rcmail.env.session_secured < time() - 120) {
+        if (rcmail.env.session_secured !== true && rcmail.env.session_secured < time() - 180) {
             var method, name;
 
             // find an active factor
@@ -327,7 +322,7 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
 
     // callback for save failure
     rcmail.addEventListener('plugin.reset_form', function(method) {
-        if (rcmail.env.kolab_2fa_factors[method]) {
+        if (method && rcmail.env.kolab_2fa_factors[method]) {
             rcmail.env.kolab_2fa_factors[method].active = false;
         }
 

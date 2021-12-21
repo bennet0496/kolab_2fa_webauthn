@@ -422,10 +422,7 @@ class kolab_2fa extends rcube_plugin
         $this->include_script('kolab2fa.js');
         $this->include_stylesheet($this->local_skin_path() . '/kolab2fa.css');
 
-        if ($this->check_secure_mode()) {
-            $this->api->output->set_env('session_secured', $_SESSION['kolab_2fa_secure_mode']);
-        }
-
+        $this->api->output->set_env('session_secured', $this->check_secure_mode());
         $this->api->output->add_label('save','cancel');
         $this->api->output->set_pagetitle($this->gettext('settingstitle'));
         $this->api->output->send('kolab_2fa.config');
@@ -671,7 +668,7 @@ class kolab_2fa extends rcube_plugin
         }
         else if ($errors) {
             $this->api->output->show_message($this->gettext('factorsaveerror'), 'error');
-            $this->api->output->command('plugin.reset_form', $method);
+            $this->api->output->command('plugin.reset_form', $data !== false ? $method : null);
         }
 
         $this->api->output->send();
@@ -779,12 +776,20 @@ class kolab_2fa extends rcube_plugin
     }
 
     /**
-     *
+     * Check whether the session is secured with 2FA (excluding the logon)
      */
     protected function check_secure_mode()
     {
-        $valid = ($_SESSION['kolab_2fa_secure_mode'] && $_SESSION['kolab_2fa_secure_mode'] > time() - 180);
-        return $valid;
-    }
+        // Allow admins that used kolab_auth's "login as" feature to act without
+        // being asked for the user's second factor
+        if (!empty($_SESSION['kolab_auth_admin']) && !empty($_SESSION['kolab_auth_password'])) {
+            return true;
+        }
 
+        if ($_SESSION['kolab_2fa_secure_mode'] && $_SESSION['kolab_2fa_secure_mode'] > time() - 180) {
+            return $_SESSION['kolab_2fa_secure_mode'];
+        }
+
+        return false;
+    }
 }
