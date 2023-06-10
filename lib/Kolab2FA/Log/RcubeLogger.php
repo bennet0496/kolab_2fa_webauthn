@@ -63,7 +63,7 @@ class RcubeLogger implements Logger
             }
             break;
 
-        case LOG_EMERGE:
+        case LOG_EMERG:
         case LOG_ALERT:
         case LOG_CRIT:
         case LOG_ERR:
