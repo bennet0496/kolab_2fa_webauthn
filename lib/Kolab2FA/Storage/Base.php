@@ -79,10 +79,10 @@ abstract class Base
     {
         $this->logger = $logger;
 
-        if ($this->config['debug']) {
+        if (!empty($this->config['debug'])) {
             $this->logger->set_level(LOG_DEBUG);
         }
-        else if ($this->config['loglevel']) {
+        else if (!empty($this->config['loglevel'])) {
             $this->logger->set_level($this->config['loglevel']);
         }
     }

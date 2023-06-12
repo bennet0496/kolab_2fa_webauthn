@@ -172,7 +172,7 @@ class RcubeUser extends Base
     {
         if ($user = $this->get_user($this->username)) {
             $prefs = $user->get_prefs();
-            return (array)$prefs[$this->key2property('blob')];
+            return (array) ($prefs[$this->key2property('blob')] ?? []);
         }
 
         return null;
@@ -191,5 +191,4 @@ class RcubeUser extends Base
         // default
         return 'kolab_2fa_' . $key;
     }
-
 }

@@ -104,7 +104,7 @@ abstract class Base
             $this->config = array_merge($this->config, $config);
         }
 
-        if ($config['storage']) {
+        if (!empty($config['storage'])) {
             $this->storage = \Kolab2FA\Storage\Base::factory($config['storage'], $config['storage_config']);
         }
     }

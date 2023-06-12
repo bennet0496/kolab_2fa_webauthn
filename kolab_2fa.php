@@ -257,12 +257,15 @@ class kolab_2fa extends rcube_plugin
         // create HTML table with two cols
         $table = new html_table(array('cols' => 2));
         $required = count($methods) > 1 ? null : 'required';
+        $row = 0;
 
         // render input for each configured auth method
         foreach ($methods as $i => $method) {
             if ($row++ > 0) {
-                $table->add(array('colspan' => 2, 'class' => 'title hint', 'style' => 'text-align:center'),
-                    $this->gettext('or'));
+                $table->add(
+                    ['colspan' => 2, 'class' => 'title hint', 'style' => 'text-align:center'],
+                    $this->gettext('or')
+                );
             }
 
             $field_id = "rcmlogin2fa$method";
@@ -314,7 +317,7 @@ class kolab_2fa extends rcube_plugin
 
         $rcmail = rcmail::get_instance();
 
-        if ($this->drivers[$factor]) {
+        if (!empty($this->drivers[$factor])) {
             return $this->drivers[$factor];
         }
 
