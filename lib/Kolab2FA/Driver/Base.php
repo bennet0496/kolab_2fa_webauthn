@@ -126,7 +126,7 @@ abstract class Base
         $data = array();
 
         foreach ($this->user_settings as $key => $p) {
-            if ($p['private']) {
+            if (!empty($p['private'])) {
                 continue;
             }
 

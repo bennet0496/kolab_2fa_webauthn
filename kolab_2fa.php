@@ -473,6 +473,7 @@ class kolab_2fa extends rcube_plugin
         $storage = $this->get_storage($rcmail->get_user_name());
         $factors = $storage ? (array)$storage->enumerate() : array();
         $drivers = (array)$rcmail->config->get('kolab_2fa_drivers', array());
+        $out = '';
         $env_methods = array();
 
         foreach ($drivers as $j => $method) {
@@ -531,12 +532,15 @@ class kolab_2fa extends rcube_plugin
 
                     case 'enum':
                     case 'select':
-                        $input = new html_select(array('disabled' => $prop['readonly']));
+                        $input = new html_select(array('disabled' => !empty($prop['readonly'])));
                         $input->add(array_map(array($this, 'gettext'), $prop['options']), $prop['options']);
                         break;
 
                     default:
-                        $input = new html_inputfield(array('size' => $prop['size'] ?: 30, 'disabled' => !$prop['editable']));
+                        $input = new html_inputfield(array(
+                                'size' => !empty($prop['size']) ? $prop['size'] : 30,
+                                'disabled' => empty($prop['editable'])
+                        ));
                 }
 
                 $explain_label = $field . 'explain' . $method;
@@ -789,7 +793,7 @@ class kolab_2fa extends rcube_plugin
             return true;
         }
 
-        if ($_SESSION['kolab_2fa_secure_mode'] && $_SESSION['kolab_2fa_secure_mode'] > time() - 180) {
+        if (!empty($_SESSION['kolab_2fa_secure_mode']) && $_SESSION['kolab_2fa_secure_mode'] > time() - 180) {
             return $_SESSION['kolab_2fa_secure_mode'];
         }
 
