@@ -132,9 +132,9 @@ abstract class Base
 
             $data[$key] = array(
                 'type'     => $p['type'],
-                'editable' => $p['editable'],
-                'hidden'   => $p['hidden'],
-                'label'    => $p['label'],
+                'editable' => $p['editable'] ?? false,
+                'hidden'   => $p['hidden'] ?? false,
+                'label'    => $p['label'] ?? '',
                 'value'    => $this->get($key, $force),
             );
 
@@ -206,7 +206,7 @@ abstract class Base
             $value = $this->get_user_prop($key);
 
             // generate property value
-            if (!isset($value) && $force && $this->user_settings[$key]['generator']) {
+            if (!isset($value) && $force && !empty($this->user_settings[$key]['generator'])) {
                 $func = $this->user_settings[$key]['generator'];
                 if (is_string($func) && !is_callable($func)) {
                     $func = array($this, $func);
@@ -220,7 +220,7 @@ abstract class Base
             }
         }
         else {
-            $value = $this->props[$key];
+            $value = $this->props[$key] ?? null;
         }
 
         return $value;
@@ -300,7 +300,7 @@ abstract class Base
             $this->user_props = (array)$this->storage->read($this->id);
         }
 
-        return $this->user_props[$key];
+        return $this->user_props[$key] ?? null;
     }
 
     /**
@@ -308,7 +308,7 @@ abstract class Base
      */
     protected function set_user_prop($key, $value)
     {
-        $this->pending_changes |= ($this->user_props[$key] !== $value);
+        $this->pending_changes |= (($this->user_props[$key] ?? null) !== $value);
         $this->user_props[$key] = $value;
         return true;
     }
