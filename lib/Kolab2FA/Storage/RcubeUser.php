@@ -63,10 +63,10 @@ class RcubeUser extends Base
      */
     public function read($key)
     {
-        if (!isset($this->cache[$key])) {
+        if (!array_key_exists($key, $this->cache)) {
             $factors = $this->get_factors();
             $this->log(LOG_DEBUG, "RcubeUser::read({$key})");
-            $this->cache[$key] = $factors[$key];
+            $this->cache[$key] = $factors[$key] ?? null;
         }
 
         return $this->cache[$key];
