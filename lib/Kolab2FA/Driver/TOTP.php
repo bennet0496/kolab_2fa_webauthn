@@ -51,14 +51,32 @@ class TOTP extends Base
             ),
         );
 
+        if (!in_array($this->config['digest'], array('md5', 'sha1', 'sha256', 'sha512'))) {
+            throw new \Exception("'{$this->config['digest']}' digest is not supported.");
+        }
+
+        if (!is_numeric($this->config['digits']) || $this->config['digits'] < 1) {
+            throw new \Exception('Digits must be at least 1.');
+        }
+
+        if (!is_numeric($this->config['interval']) || $this->config['interval'] < 1) {
+            throw new \Exception('Interval must be at least 1.');
+        }
+
+        if ($this->hasSemicolon($this->config['issuer'])) {
+            throw new \Exception('Issuer must not contain a semi-colon.');
+        }
+
         // copy config options
-        $this->backend = new \Kolab2FA\OTP\TOTP();
-        $this->backend
-            ->setDigits($this->config['digits'])
-            ->setInterval($this->config['interval'])
-            ->setDigest($this->config['digest'])
-            ->setIssuer($this->config['issuer'])
-            ->setIssuerIncludedAsParameter(true);
+        $this->backend = \OTPHP\TOTP::create(
+            null, //secret
+            $this->config['interval'], // period
+            $this->config['digest'], // digest
+            $this->config['digits'] // digits
+        );
+
+        $this->backend->setIssuer($this->config['issuer']);
+        $this->backend->setIssuerIncludedAsParameter(true);
     }
 
     /**
@@ -75,11 +93,12 @@ class TOTP extends Base
             return false;
         }
 
-        $this->backend->setLabel($this->username)->setSecret($secret);
+        $this->backend->setLabel($this->username);
+        $this->backend->setSecret($secret);
 
         // Pass a window to indicate the maximum timeslip between client (mobile
         // device) and server.
-        $pass = $this->backend->verify($code, $timestamp, 150);
+        $pass = $this->backend->verify($code, (int) $timestamp, 150);
 
         // try all codes from $timestamp till now
         if (!$pass && $timestamp) {
@@ -95,7 +114,7 @@ class TOTP extends Base
     }
 
     /**
-     *
+     * Get the provisioning URI.
      */
     public function get_provisioning_uri()
     {
@@ -110,8 +129,9 @@ class TOTP extends Base
 
         // TODO: deny call if already active?
 
-        $this->backend->setLabel($this->username)->setSecret($this->secret);
+        $this->backend->setLabel($this->username);
+        $this->backend->setSecret($this->secret);
+
         return $this->backend->getProvisioningUri();
     }
-
 }

@@ -112,9 +112,10 @@ abstract class Base
     /**
      * Verify the submitted authentication code
      *
-     * @param string $code The 2nd authentication factor to verify
-     * @param int    $timestamp  Timestamp of authentication process (window start)
-     * @return boolean True if valid, false otherwise
+     * @param string $code      The 2nd authentication factor to verify
+     * @param int    $timestamp Timestamp of authentication process (window start)
+     *
+     * @return bool True if valid, false otherwise
      */
     abstract function verify($code, $timestamp = null);
 
@@ -160,7 +161,7 @@ abstract class Base
     }
 
     /**
-     * Implement this method if the driver can be prpvisioned via QR code
+     * Implement this method if the driver can be provisioned via QR code
      */
     /* abstract function get_provisioning_uri(); */
 
@@ -181,6 +182,7 @@ abstract class Base
         for ($i = 0; $i < $length; $i++) {
             $secret .= $chars[array_rand($chars)];
         }
+
         return $secret;
     }
 
@@ -289,6 +291,14 @@ abstract class Base
         }
 
         return false;
+    }
+
+    /**
+     * Checks that a string contains a semicolon
+     */
+    protected function hasSemicolon($value)
+    {
+        return preg_match('/(:|%3A)/i', (string) $value) > 0;
     }
 
     /**

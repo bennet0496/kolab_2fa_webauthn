@@ -57,13 +57,28 @@ class HOTP extends Base
             ),
         );
 
+        if (!in_array($this->config['digest'], array('md5', 'sha1', 'sha256', 'sha512'))) {
+            throw new \Exception("'{$this->config['digest']}' digest is not supported.");
+        }
+
+        if (!is_numeric($this->config['digits']) || $this->config['digits'] < 1) {
+            throw new \Exception('Digits must be at least 1.');
+        }
+
+        if ($this->hasSemicolon($this->config['issuer'])) {
+            throw new \Exception('Issuer must not contain a semi-colon.');
+        }
+
         // copy config options
-        $this->backend = new \Kolab2FA\OTP\HOTP();
-        $this->backend
-            ->setDigits($this->config['digits'])
-            ->setDigest($this->config['digest'])
-            ->setIssuer($this->config['issuer'])
-            ->setIssuerIncludedAsParameter(true);
+        $this->backend = \OTPHP\HOTP::create(
+            null, // secret
+            0, // counter
+            $this->config['digest'], // digest
+            $this->config['digits'] // digits
+        );
+
+        $this->backend->setIssuer($this->config['issuer']);
+        $this->backend->setIssuerIncludedAsParameter(true);
     }
 
     /**
@@ -82,8 +97,11 @@ class HOTP extends Base
         }
 
         try {
-            $this->backend->setLabel($this->username)->setSecret($secret)->setCounter(intval($this->get('counter')));
-            $pass = $this->backend->verify($code, $counter, $this->config['window']);
+            $this->backend->setLabel($this->username);
+            $this->backend->setSecret($secret);
+            $this->backend->setCounter(intval($this->get('counter')));
+
+            $pass = $this->backend->verify($code, $counter, (int) $this->config['window']);
 
             // store incremented counter value
             $this->set('counter', $this->backend->getCounter());
@@ -100,7 +118,7 @@ class HOTP extends Base
     }
 
     /**
-     *
+     * Get the provisioning URI.
      */
     public function get_provisioning_uri()
     {
@@ -114,7 +132,10 @@ class HOTP extends Base
 
         // TODO: deny call if already active?
 
-        $this->backend->setLabel($this->username)->setSecret($this->secret)->setCounter(intval($this->get('counter')));
+        $this->backend->setLabel($this->username);
+        $this->backend->setSecret($this->secret);
+        $this->backend->setCounter(intval($this->get('counter')));
+
         return $this->backend->getProvisioningUri();
     }
 

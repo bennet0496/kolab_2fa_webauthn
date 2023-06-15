@@ -65,7 +65,7 @@ class RcubeUser extends Base
     {
         if (!isset($this->cache[$key])) {
             $factors = $this->get_factors();
-            $this->log(LOG_DEBUG, 'RcubeUser::read() ' . $key);
+            $this->log(LOG_DEBUG, "RcubeUser::read({$key})");
             $this->cache[$key] = $factors[$key];
         }
 
@@ -77,7 +77,7 @@ class RcubeUser extends Base
      */
     public function write($key, $value)
     {
-        $this->log(LOG_DEBUG, 'RcubeUser::write() ' . @json_encode($value));
+        $this->log(LOG_DEBUG, "RcubeUser::write({$key}) " . @json_encode($value));
 
         if ($user = $this->get_user($this->username)) {
             $this->cache[$key] = $value;

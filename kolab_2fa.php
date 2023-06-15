@@ -193,7 +193,7 @@ class kolab_2fa extends rcube_plugin
             $_POST['_host'] = $_SESSION['host'];
             $_POST['_pass'] = $rcmail->decrypt($_SESSION['password']);
 
-            if ($_SESSION['kolab_auth_admin']) {
+            if (!empty($_SESSION['kolab_auth_admin'])) {
                 $_POST['_user']    = $_SESSION['kolab_auth_admin'];
                 $_POST['_loginas'] = $_SESSION['username'];
             }
@@ -553,10 +553,11 @@ class kolab_2fa extends rcube_plugin
 
             // add row for displaying the QR code
             if (method_exists($driver, 'get_provisioning_uri')) {
+                $gif = 'data:image/gif;base64,R0lGODlhDwAPAIAAAMDAwAAAACH5BAEAAAAALAAAAAAPAA8AQAINhI+py+0Po5y02otnAQA7';
                 $table->add('title', $this->gettext('qrcode'));
-                $table->add(null,
+                $table->add('pl-3 pr-3',
                     html::div('explain form-text', $this->gettext("qrcodeexplain$method"))
-                    . html::tag('img', array('src' => 'data:image/gif;base64,R0lGODlhDwAPAIAAAMDAwAAAACH5BAEAAAAALAAAAAAPAA8AQAINhI+py+0Po5y02otnAQA7', 'class' => 'qrcode', 'rel' => $method))
+                    . html::tag('img', array('src' => $gif, 'class' => 'qrcode mt-2', 'rel' => $method))
                 );
 
                 // add row for testing the factor
@@ -566,7 +567,6 @@ class kolab_2fa extends rcube_plugin
                     html::tag('input', array('type' => 'text', 'name' => '_verify_code', 'id' => $field_id, 'class' => 'k2fa-verify', 'size' => 20, 'required' => true)) .
                     html::div('explain form-text', $this->gettext("verifycodeexplain$method"))
                 );
-
             }
 
             $input_id = new html_hiddenfield(array('name' => '_prop[id]', 'value' => ''));
