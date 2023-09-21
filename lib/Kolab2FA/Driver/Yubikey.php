@@ -107,6 +107,10 @@ class Yubikey extends Base
             // truncate the submitted yubikey code to 12 characters
             $value = substr($value, 0, 12);
         }
+        // invalid or no yubikey token provided
+        elseif ($key == 'yubikeyid') {
+            return false;
+        }
 
         return parent::set($key, $value, $persistent);
     }
