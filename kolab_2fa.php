@@ -91,7 +91,7 @@ class kolab_2fa extends rcube_plugin
         $username = !empty($_SESSION['kolab_auth_admin']) ? $_SESSION['kolab_auth_admin'] : $args['user'];
 
         // Check if we need to add/force domain to username
-        $username_domain = $this->config->get('username_domain');
+        $username_domain = $rcmail->config->get('username_domain');
         if (!empty($username_domain)) {
             $domain = '';
             if (is_array($username_domain)) {
@@ -118,7 +118,7 @@ class kolab_2fa extends rcube_plugin
         }
 
         // Convert username to lowercase. Copied from rcmail::login()
-        $login_lc = $this->config->get('login_lc', 2);
+        $login_lc = $rcmail->config->get('login_lc', 2);
         if ($login_lc) {
             if ($login_lc == 2 || $login_lc === true) {
                 $username = mb_strtolower($username);
