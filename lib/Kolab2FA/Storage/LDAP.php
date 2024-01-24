@@ -34,6 +34,8 @@ class LDAP extends Base
     private $ldapcache = array();
     private $conn;
     private $error;
+    private $ready = false;
+
 
     public function init(array $config)
     {
@@ -327,7 +329,7 @@ class LDAP extends Base
         }
 
         // build hierarchal domain string
-        $dc = $this->conn->domain_root_dn($d);
+        $dc = isset($d) ? $this->conn->domain_root_dn($d) : '';
 
         $class = $this->config['classmap'] ? $this->config['classmap']['*'] : '*';
 
@@ -341,9 +343,8 @@ class LDAP extends Base
             }
         }
 
-        $replaces = array('%dc' => $dc, '%d' => $d, '%fu' => $user, '%u' => $u, '%c' => $class);
+        $replaces = array('%dc' => $dc, '%d' => $d ?? '', '%fu' => $user, '%u' => $u ?? '', '%c' => $class);
 
         return strtr($str, $replaces);
     }
-
 }

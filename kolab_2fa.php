@@ -138,6 +138,7 @@ class kolab_2fa extends rcube_plugin
             'check'   => $rcmail->config->get('kolab_2fa_check', true),
         ));
 
+        $factors = [];
         if (isset($lookup['factors'])) {
             $factors = (array)$lookup['factors'];
         }
@@ -192,7 +193,7 @@ class kolab_2fa extends rcube_plugin
 
         $time     = $_SESSION['kolab_2fa_time'];
         $nonce    = $_SESSION['kolab_2fa_nonce'];
-        $factors  = (array)$_SESSION['kolab_2fa_factors'];
+        $factors  = (array) $_SESSION['kolab_2fa_factors'];
         $expired  = $time < time() - $rcmail->config->get('kolab_2fa_timeout', 120);
         $username = !empty($_SESSION['kolab_auth_admin']) ? $_SESSION['kolab_auth_admin'] : $_SESSION['username'];
 
@@ -414,7 +415,7 @@ class kolab_2fa extends rcube_plugin
                         'type' => 'php',
                         'file' => __FILE__,
                         'line' => __LINE__,
-                        'message' => $error),
+                        'message' => $e->getMessage()),
                     true, false);
             }
         }

@@ -43,7 +43,7 @@ class RcubeLogger implements Logger
         $this->name = $name;
     }
 
-    public function set_level($name)
+    public function set_level($level)
     {
         $this->level = $level;
     }
