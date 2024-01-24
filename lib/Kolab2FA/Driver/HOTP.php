@@ -27,11 +27,11 @@ class HOTP extends Base
 {
     public $method = 'hotp';
 
-    protected $config = array(
+    protected $config = [
         'digits'   => 6,
         'window'   => 4,
         'digest'   => 'sha1',
-    );
+    ];
 
     protected $backend;
 
@@ -42,22 +42,22 @@ class HOTP extends Base
     {
         parent::init($config);
 
-        $this->user_settings += array(
-            'secret' => array(
+        $this->user_settings += [
+            'secret' => [
                 'type'      => 'text',
                 'private'   => true,
                 'label'     => 'secret',
                 'generator' => 'generate_secret',
-            ),
-            'counter' => array(
+            ],
+            'counter' => [
                 'type'      => 'integer',
                 'editable'  => false,
                 'hidden'    => true,
                 'generator' => 'random_counter',
-            ),
-        );
+            ],
+        ];
 
-        if (!in_array($this->config['digest'], array('md5', 'sha1', 'sha256', 'sha512'))) {
+        if (!in_array($this->config['digest'], ['md5', 'sha1', 'sha256', 'sha512'])) {
             throw new \Exception("'{$this->config['digest']}' digest is not supported.");
         }
 
@@ -106,8 +106,7 @@ class HOTP extends Base
             // store incremented counter value
             $this->set('counter', $this->backend->getCounter());
             $this->commit();
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             // LOG: exception
             // rcube::console("VERIFY HOTP: $this->id, " . strval($e));
             $pass = false;

@@ -23,13 +23,12 @@
 
 namespace Kolab2FA\Storage;
 
-use \Kolab2FA\Log;
-
+use Kolab2FA\Log;
 
 abstract class Base
 {
     public $username = null;
-    protected $config = array();
+    protected $config = [];
     protected $logger;
 
     /**
@@ -37,11 +36,11 @@ abstract class Base
      */
     public static function factory($backend, $config)
     {
-        $classmap = array(
+        $classmap = [
             'ldap' => '\\Kolab2FA\\Storage\\LDAP',
             'roundcube' => '\\Kolab2FA\\Storage\\RcubeUser',
             'rcubeuser' => '\\Kolab2FA\\Storage\\RcubeUser',
-        );
+        ];
 
         $cls = $classmap[strtolower($backend)];
         if ($cls && class_exists($cls)) {
@@ -73,7 +72,7 @@ abstract class Base
     }
 
     /**
-     * 
+     *
      */
     public function set_logger(Log\Logger $logger)
     {
@@ -81,8 +80,7 @@ abstract class Base
 
         if (!empty($this->config['debug'])) {
             $this->logger->set_level(LOG_DEBUG);
-        }
-        else if (!empty($this->config['loglevel'])) {
+        } elseif (!empty($this->config['loglevel'])) {
             $this->logger->set_level($this->config['loglevel']);
         }
     }

@@ -23,17 +23,17 @@
 
 namespace Kolab2FA\Storage;
 
-use \rcmail;
-use \rcube_user;
+use rcmail;
+use rcube_user;
 
 class RcubeUser extends Base
 {
     // sefault config
-    protected $config = array(
-        'keymap' => array(),
-    );
+    protected $config = [
+        'keymap' => [],
+    ];
 
-    private $cache = array();
+    private $cache = [];
     private $user;
 
     public function init(array $config)
@@ -50,12 +50,12 @@ class RcubeUser extends Base
     public function enumerate()
     {
         if ($factors = $this->get_factors()) {
-            return array_keys(array_filter($factors, function($prop) {
+            return array_keys(array_filter($factors, function ($prop) {
                 return !empty($prop['active']);
             }));
         }
 
-        return array();
+        return [];
     }
 
     /**
@@ -86,7 +86,7 @@ class RcubeUser extends Base
             $factors[$key] = $value;
 
             $pkey = $this->key2property('blob');
-            $save_data = array($pkey => $factors);
+            $save_data = [$pkey => $factors];
             $update_index = false;
 
             // remove entry
@@ -95,8 +95,8 @@ class RcubeUser extends Base
                 $update_index = true;
             }
             // remove non-active entries
-            else if (!empty($value['active'])) {
-                $factors = array_filter($factors, function($prop) {
+            elseif (!empty($value['active'])) {
+                $factors = array_filter($factors, function ($prop) {
                     return !empty($prop['active']);
                 });
                 $update_index = true;
@@ -105,7 +105,7 @@ class RcubeUser extends Base
             // update the index of active factors
             if ($update_index) {
                 $save_data[$this->key2property('factors')] = array_keys(
-                    array_filter($factors, function($prop) {
+                    array_filter($factors, function ($prop) {
                         return !empty($prop['active']);
                     })
                 );
@@ -139,7 +139,7 @@ class RcubeUser extends Base
         parent::set_username($username);
 
         // reset cached values
-        $this->cache = array();
+        $this->cache = [];
         $this->user = null;
     }
 

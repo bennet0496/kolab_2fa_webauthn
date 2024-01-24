@@ -23,15 +23,15 @@
 
 namespace Kolab2FA\Storage;
 
-use \Net_LDAP3;
-use \Kolab2FA\Log\Logger;
+use Net_LDAP3;
+use Kolab2FA\Log\Logger;
 
 class LDAP extends Base
 {
     public $userdn;
 
-    private $cache = array();
-    private $ldapcache = array();
+    private $cache = [];
+    private $ldapcache = [];
     private $conn;
     private $error;
     private $ready = false;
@@ -42,7 +42,7 @@ class LDAP extends Base
         parent::init($config);
 
         $this->conn = new Net_LDAP3($config);
-        $this->conn->config_set('log_hook', array($this, 'log'));
+        $this->conn->config_set('log_hook', [$this, 'log']);
 
         $this->conn->connect();
 
@@ -62,12 +62,12 @@ class LDAP extends Base
      */
     public function enumerate($active = true)
     {
-        $filter  = $this->parse_vars($this->config['filter'],  '*');
+        $filter  = $this->parse_vars($this->config['filter'], '*');
         $base_dn = $this->parse_vars($this->config['base_dn'], '*');
         $scope   = $this->config['scope'] ?: 'sub';
-        $ids     = array();
+        $ids     = [];
 
-        if ($this->ready && ($result = $this->conn->search($base_dn, $filter, $scope, array($this->config['fieldmap']['id'], $this->config['fieldmap']['active'])))) {
+        if ($this->ready && ($result = $this->conn->search($base_dn, $filter, $scope, [$this->config['fieldmap']['id'], $this->config['fieldmap']['active']]))) {
             foreach ($result as $dn => $entry) {
                 $rec = $this->field_mapping($dn, Net_LDAP3::normalize_entry($entry, true));
                 if (!empty($rec['id']) && ($active === null || $active == $rec['active'])) {
@@ -99,19 +99,18 @@ class LDAP extends Base
     public function write($key, $value)
     {
         $success = false;
-        $ldap_attrs = array();
+        $ldap_attrs = [];
 
         if (is_array($value)) {
             // add some default values
-            $value += (array)$this->config['defaults'] + array('active' => false, 'username' => $this->username, 'userdn' => $this->userdn);
+            $value += (array)$this->config['defaults'] + ['active' => false, 'username' => $this->username, 'userdn' => $this->userdn];
 
             foreach ($value as $k => $val) {
                 if ($attr = $this->config['fieldmap'][$k]) {
                     $ldap_attrs[$attr] = $this->value_mapping($k, $val, false);
                 }
             }
-        }
-        else {
+        } else {
             // invalid data structure
             return false;
         }
@@ -125,12 +124,12 @@ class LDAP extends Base
             $success = !empty($result);
         }
         // insert new record
-        else if ($this->ready) {
+        elseif ($this->ready) {
             $entry_dn = $this->get_entry_dn($this->username, $key);
 
             // add object class attribute
             $me = $this;
-            $ldap_attrs['objectclass'] = array_map(function($cls) use ($me, $key) {
+            $ldap_attrs['objectclass'] = array_map(function ($cls) use ($me, $key) {
                 return $me->parse_vars($cls, $key);
             }, (array)$this->config['objectclass']);
 
@@ -139,7 +138,7 @@ class LDAP extends Base
 
         if ($success) {
             $this->cache[$key] = $value;
-            $this->ldapcache = array();
+            $this->ldapcache = [];
 
             // cleanup: remove disabled/inactive/temporary entries
             if ($value['active']) {
@@ -185,8 +184,8 @@ class LDAP extends Base
         parent::set_username($username);
 
         // reset cached values
-        $this->cache = array();
-        $this->ldapcache = array();
+        $this->cache = [];
+        $this->ldapcache = [];
     }
 
     /**
@@ -198,7 +197,7 @@ class LDAP extends Base
             return false;
         }
 
-        $auth_roles = array();
+        $auth_roles = [];
         foreach ($this->enumerate(true) as $id) {
             foreach ($this->config['user_roles'] as $prefix => $role) {
                 if (strpos($id, $prefix) === 0) {
@@ -208,12 +207,12 @@ class LDAP extends Base
         }
 
         $role_attr = $this->config['fieldmap']['roles'] ?: 'nsroledn';
-        if ($user_attrs = $this->conn->get_entry($this->userdn, array($role_attr))) {
+        if ($user_attrs = $this->conn->get_entry($this->userdn, [$role_attr])) {
             $internals = array_values($this->config['user_roles']);
             $new_attrs = $old_attrs = Net_LDAP3::normalize_entry($user_attrs);
             $new_attrs[$role_attr] = array_merge(
                 array_unique($auth_roles),
-                array_filter((array)$old_attrs[$role_attr], function($f) use ($internals) { return !in_array($f, $internals); })
+                array_filter((array)$old_attrs[$role_attr], function ($f) use ($internals) { return !in_array($f, $internals); })
             );
 
             $result = $this->conn->modify_entry($this->userdn, $old_attrs, $new_attrs);
@@ -231,7 +230,7 @@ class LDAP extends Base
         $entry_dn = $this->get_entry_dn($user, $key);
 
         if (!isset($this->ldapcache[$entry_dn])) {
-            $this->ldapcache[$entry_dn] = array();
+            $this->ldapcache[$entry_dn] = [];
 
             if ($this->ready && ($entry = $this->conn->get_entry($entry_dn, array_values($this->config['fieldmap'])))) {
                 $this->ldapcache[$entry_dn] = $this->field_mapping($entry_dn, Net_LDAP3::normalize_entry($entry, true));
@@ -263,8 +262,7 @@ class LDAP extends Base
             $attr_lc = strtolower($attr);
             if (isset($entry[$attr_lc])) {
                 $entry[$field] = $this->value_mapping($field, $entry[$attr_lc], true);
-            }
-            else if (isset($entry[$attr])) {
+            } elseif (isset($entry[$attr])) {
                 $entry[$field] = $this->value_mapping($field, $entry[$attr], true);
             }
         }
@@ -283,11 +281,10 @@ class LDAP extends Base
             }
 
             if (is_array($value)) {
-                $value = array_filter(array_map(function($val) use ($map) {
+                $value = array_filter(array_map(function ($val) use ($map) {
                     return $map[$val];
                 }, $value));
-            }
-            else {
+            } else {
                 $value = $map[$value];
             }
         }
@@ -317,9 +314,8 @@ class LDAP extends Base
         $user = $this->username;
 
         if (strpos($user, '@') > 0) {
-            list($u, $d) = explode('@', $user);
-        }
-        else if ($this->userdn) {
+            [$u, $d] = explode('@', $user);
+        } elseif ($this->userdn) {
             $u = $this->userdn;
             $d = trim(str_replace(',dc=', '.', substr($u, strpos($u, ',dc='))), '.');
         }
@@ -343,7 +339,7 @@ class LDAP extends Base
             }
         }
 
-        $replaces = array('%dc' => $dc, '%d' => $d ?? '', '%fu' => $user, '%u' => $u ?? '', '%c' => $class);
+        $replaces = ['%dc' => $dc, '%d' => $d ?? '', '%fu' => $user, '%u' => $u ?? '', '%c' => $class];
 
         return strtr($str, $replaces);
     }

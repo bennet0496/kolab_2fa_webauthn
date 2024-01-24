@@ -24,7 +24,7 @@
 
 namespace Kolab2FA\Log;
 
-use \rcube;
+use rcube;
 
 class RcubeLogger implements Logger
 {
@@ -55,26 +55,25 @@ class RcubeLogger implements Logger
         }
 
         switch ($level) {
-        case LOG_DEBUG:
-        case LOG_INFO:
-        case LOG_NOTICE:
-            if ($level >= $this->level) {
-                rcube::write_log($this->name ?: 'console', $message);
-            }
-            break;
+            case LOG_DEBUG:
+            case LOG_INFO:
+            case LOG_NOTICE:
+                if ($level >= $this->level) {
+                    rcube::write_log($this->name ?: 'console', $message);
+                }
+                break;
 
-        case LOG_EMERG:
-        case LOG_ALERT:
-        case LOG_CRIT:
-        case LOG_ERR:
-        case LOG_WARNING:
-            rcube::raise_error(array(
-                'code' => 600,
-                'type' => 'php',
-                'message' => $message,
-            ), true, false);
-            break;
+            case LOG_EMERG:
+            case LOG_ALERT:
+            case LOG_CRIT:
+            case LOG_ERR:
+            case LOG_WARNING:
+                rcube::raise_error([
+                    'code' => 600,
+                    'type' => 'php',
+                    'message' => $message,
+                ], true, false);
+                break;
         }
     }
 }
-

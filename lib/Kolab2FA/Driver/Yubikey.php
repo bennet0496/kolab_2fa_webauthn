@@ -36,13 +36,13 @@ class Yubikey extends Base
     {
         parent::init($config);
 
-        $this->user_settings += array(
-            'yubikeyid' => array(
+        $this->user_settings += [
+            'yubikeyid' => [
                 'type'     => 'text',
                 'editable' => true,
                 'label'    => 'secret',
-            ),
-        );
+            ],
+        ];
 
         // initialize validator
         $this->backend = new \Yubikey\Validate($this->config['apikey'], $this->config['clientid']);
@@ -76,8 +76,7 @@ class Yubikey extends Base
             try {
                 $response = $this->backend->check($code);
                 $pass     = $response->success() === true;
-            }
-            catch (\Exception $e) {
+            } catch (\Exception $e) {
                 // TODO: log exception
             }
         }
@@ -99,8 +98,7 @@ class Yubikey extends Base
                     // TODO: report error
                     return false;
                 }
-            }
-            catch (\Exception $e) {
+            } catch (\Exception $e) {
                 return false;
             }
 

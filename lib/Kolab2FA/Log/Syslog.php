@@ -24,7 +24,7 @@
 
 namespace Kolab2FA\Log;
 
-use \rcube;
+use rcube;
 
 class Syslog implements Logger
 {
