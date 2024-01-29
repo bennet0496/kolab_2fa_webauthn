@@ -336,7 +336,7 @@ class kolab_2fa extends rcube_plugin
      * Load driver class for the given authentication factor
      *
      * @param string $factor Factor identifier (<method>:<id>)
-     * @return Kolab2FA\Driver\Base
+     * @return Kolab2FA\Driver\Base|false
      */
     public function get_driver($factor)
     {
