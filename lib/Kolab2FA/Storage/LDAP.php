@@ -33,7 +33,6 @@ class LDAP extends Base
     private $cache = [];
     private $ldapcache = [];
     private $conn;
-    private $error;
     private $ready = false;
 
 
@@ -53,7 +52,7 @@ class LDAP extends Base
         $this->ready = $this->conn->bind($bind_dn, $bind_pass);
 
         if (!$this->ready) {
-            throw new Exception("LDAP storage not ready: " . $this->error);
+            throw new Exception("LDAP storage not ready");
         }
     }
 
