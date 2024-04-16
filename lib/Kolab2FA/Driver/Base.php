@@ -23,6 +23,12 @@
 
 namespace Kolab2FA\Driver;
 
+/**
+ * Kolab 2-Factor-Authentication Driver base class
+ *
+ * @property string $username 
+ * @property string $secret
+ */
 abstract class Base
 {
     public $method;
