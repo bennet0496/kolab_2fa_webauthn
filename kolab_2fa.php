@@ -734,6 +734,10 @@ class kolab_2fa extends rcube_plugin
                 try {
                     $uri = $driver->get_provisioning_uri();
 
+                    // Some OTP apps have an issue with algorithm character case
+                    // So we make sure we use upper-case per the spec.
+                    $uri = str_replace('algorithm=sha', 'algorithm=SHA', $uri);
+
                     $qr = new Endroid\QrCode\QrCode();
                     $qr->setText($uri)
                        ->setSize(240)
