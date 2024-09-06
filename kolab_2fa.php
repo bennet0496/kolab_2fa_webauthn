@@ -242,10 +242,7 @@ class kolab_2fa extends rcube_plugin
      */
     protected function verify_factor_auth($method, $code, $username)
     {
-        if (strlen($code) && ($driver = $this->get_driver($method))) {
-            // set properties from login
-            $driver->username = $username;
-
+        if (strlen($code) && ($driver = $this->get_driver($method, $username))) {
             try {
                 // verify the submitted code
                 return $driver->verify($code, $_SESSION['kolab_2fa_time']);
@@ -335,10 +332,12 @@ class kolab_2fa extends rcube_plugin
     /**
      * Load driver class for the given authentication factor
      *
-     * @param string $factor Factor identifier (<method>:<id>)
+     * @param string $factor   Factor identifier (<method>:<id>)
+     * @param string $username Username (email)
+     *
      * @return Kolab2FA\Driver\Base|false
      */
-    public function get_driver($factor)
+    public function get_driver($factor, $username = null)
     {
         [$method] = explode(':', $factor, 2);
 
@@ -350,22 +349,20 @@ class kolab_2fa extends rcube_plugin
 
         $config = $rcmail->config->get('kolab_2fa_' . $method, []);
 
-        // use product name as "issuer""
+        // use product name as "issuer"
         if (empty($config['issuer'])) {
             $config['issuer'] = $rcmail->config->get('product_name');
         }
 
+        if (empty($username) && $rcmail->user->ID) {
+            $username = $rcmail->get_user_name();
+        }
+
         try {
-            // TODO: use external auth service if configured
 
-            $driver = \Kolab2FA\Driver\Base::factory($factor, $config);
+            $storage = $this->get_storage($username);
 
-            // attach storage
-            $driver->storage = $this->get_storage();
-
-            if ($rcmail->user->ID) {
-                $driver->username  = $rcmail->get_user_name();
-            }
+            $driver = \Kolab2FA\Driver\Base::factory($storage, $factor, $config);
 
             $this->drivers[$factor] = $driver;
             return $driver;
@@ -771,7 +768,7 @@ class kolab_2fa extends rcube_plugin
             if (is_array($data)) {
                 foreach ($data as $key => $value) {
                     if ($value !== '******') {
-                        $driver->$key = $value;
+                        $driver->set($key, $value, false);
                     }
                 }
             }

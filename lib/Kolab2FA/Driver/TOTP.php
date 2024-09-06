@@ -33,6 +33,7 @@ class TOTP extends Base
         'digest'   => 'sha1',
     ];
 
+    protected $config_keys = ['digits', 'digest'];
     protected $backend;
 
     /**
@@ -88,12 +89,10 @@ class TOTP extends Base
         $secret = $this->get('secret');
 
         if (!strlen($secret)) {
-            // LOG: "no secret set for user $this->username"
-            // rcube::console("VERIFY TOTP: no secret set for user $this->username");
             return false;
         }
 
-        $this->backend->setLabel($this->username);
+        $this->backend->setLabel($this->get('username'));
         $this->backend->setSecret($secret);
 
         // Pass a window to indicate the maximum timeslip between client (mobile
@@ -109,7 +108,6 @@ class TOTP extends Base
             }
         }
 
-        // rcube::console('VERIFY TOTP', $this->username, $secret, $code, $timestamp, $pass);
         return $pass;
     }
 
@@ -118,19 +116,17 @@ class TOTP extends Base
      */
     public function get_provisioning_uri()
     {
-        // rcube::console('PROV', $this->secret);
-        if (!$this->secret) {
+        if (!$this->get('secret')) {
             // generate new secret and store it
             $this->set('secret', $this->get('secret', true));
             $this->set('created', $this->get('created', true));
-            // rcube::console('PROV2', $this->secret);
             $this->commit();
         }
 
         // TODO: deny call if already active?
 
-        $this->backend->setLabel($this->username);
-        $this->backend->setSecret($this->secret);
+        $this->backend->setLabel($this->get('username'));
+        $this->backend->setSecret($this->get('secret'));
 
         return $this->backend->getProvisioningUri();
     }

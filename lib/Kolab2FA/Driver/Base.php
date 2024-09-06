@@ -25,9 +25,6 @@ namespace Kolab2FA\Driver;
 
 /**
  * Kolab 2-Factor-Authentication Driver base class
- *
- * @property string $username
- * @property string $secret
  */
 abstract class Base
 {
@@ -36,6 +33,7 @@ abstract class Base
     public $storage;
 
     protected $config          = [];
+    protected $config_keys     = [];
     protected $props           = [];
     protected $user_props      = [];
     protected $pending_changes = false;
@@ -67,7 +65,7 @@ abstract class Base
     /**
      * Static factory method
      */
-    public static function factory($id, $config)
+    public static function factory($storage, $id, $config)
     {
         [$method] = explode(':', $id);
 
@@ -79,7 +77,7 @@ abstract class Base
 
         $cls = $classmap[strtolower($method)];
         if ($cls && class_exists($cls)) {
-            return new $cls($config, $id);
+            return new $cls($storage, $config, $id);
         }
 
         throw new Exception("Unknown 2FA driver '$method'");
@@ -88,29 +86,40 @@ abstract class Base
     /**
      * Default constructor
      */
-    public function __construct($config = null, $id = null)
+    public function __construct($storage, $config = null, $id = null)
     {
-        $this->init($config);
+        if (!is_array($config)) {
+            $config = [];
+        }
+
+        $this->storage = $storage;
+        $this->props['username'] = (string) $storage->username;
 
         if (!empty($id) && $id != $this->method) {
             $this->id = $id;
+            if ($this->storage) {
+                $this->user_props = (array) $this->storage->read($this->id);
+                foreach ($this->config_keys as $key) {
+                    if (isset($this->user_props[$key])) {
+                        $config[$key] = $this->user_props[$key];
+                    }
+                }
+            }
         } else { // generate random ID
             $this->id = $this->method . ':' . bin2hex(openssl_random_pseudo_bytes(12));
             $this->temporary = true;
         }
+
+        $this->init($config);
     }
 
     /**
      * Initialize the driver with the given config options
      */
-    public function init($config)
+    protected function init($config)
     {
         if (is_array($config)) {
             $this->config = array_merge($this->config, $config);
-        }
-
-        if (!empty($config['storage'])) {
-            $this->storage = \Kolab2FA\Storage\Base::factory($config['storage'], $config['storage_config']);
         }
     }
 
@@ -123,6 +132,11 @@ abstract class Base
      * @return bool True if valid, false otherwise
      */
     abstract public function verify($code, $timestamp = null);
+
+    /**
+     * Implement this method if the driver can be provisioned via QR code
+     */
+    /* abstract function get_provisioning_uri(); */
 
     /**
      * Getter for user-visible properties
@@ -165,11 +179,6 @@ abstract class Base
 
         return $data;
     }
-
-    /**
-     * Implement this method if the driver can be provisioned via QR code
-     */
-    /* abstract function get_provisioning_uri(); */
 
     /**
      * Generate a random secret string
@@ -227,7 +236,11 @@ abstract class Base
                 }
             }
         } else {
-            $value = $this->props[$key] ?? null;
+            $value = $this->get_user_prop($key);
+
+            if ($value === null) {
+                $value = $this->props[$key] ?? null;
+            }
         }
 
         return $value;
@@ -262,27 +275,23 @@ abstract class Base
     public function commit()
     {
         if (!empty($this->user_props) && $this->storage && $this->pending_changes) {
-            if ($this->storage->write($this->id, $this->user_props)) {
+            $props = $this->user_props;
+
+            // Remamber the driver config too. It will be used to verify the code.
+            // The configured one may be different than the one used on code creation.
+            foreach ($this->config_keys as $key) {
+                if (isset($this->config[$key])) {
+                    $props[$key] = $this->config[$key];
+                }
+            }
+
+            if ($this->storage->write($this->id, $props)) {
                 $this->pending_changes = false;
                 $this->temporary = false;
             }
         }
 
         return !$this->pending_changes;
-    }
-
-    /**
-     * Dedicated setter for the username property
-     */
-    public function set_username($username)
-    {
-        $this->props['username'] = $username;
-
-        if ($this->storage) {
-            $this->storage->set_username($username);
-        }
-
-        return true;
     }
 
     /**
@@ -325,34 +334,5 @@ abstract class Base
         $this->pending_changes |= (($this->user_props[$key] ?? null) !== $value);
         $this->user_props[$key] = $value;
         return true;
-    }
-
-    /**
-     * Magic getter for read-only access to driver properties
-     */
-    public function __get($key)
-    {
-        // this is a per-user property: get from persistent storage
-        if (isset($this->user_settings[$key])) {
-            return $this->get_user_prop($key);
-        }
-
-        return $this->props[$key];
-    }
-
-    /**
-     * Magic setter for restricted access to driver properties
-     */
-    public function __set($key, $value)
-    {
-        $this->set($key, $value, false);
-    }
-
-    /**
-     * Magic check if driver property is defined
-     */
-    public function __isset($key)
-    {
-        return isset($this->props[$key]);
     }
 }

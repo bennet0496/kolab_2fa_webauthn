@@ -33,6 +33,7 @@ class HOTP extends Base
         'digest'   => 'sha1',
     ];
 
+    protected $config_keys = ['digits', 'digest'];
     protected $backend;
 
     /**
@@ -88,31 +89,24 @@ class HOTP extends Base
     {
         // get my secret from the user storage
         $secret  = $this->get('secret');
-        $counter = $this->get('counter');
 
         if (!strlen($secret)) {
-            // LOG: "no secret set for user $this->username"
-            // rcube::console("VERIFY HOTP: no secret set for user $this->username");
             return false;
         }
 
         try {
-            $this->backend->setLabel($this->username);
+            $this->backend->setLabel($this->get('username'));
             $this->backend->setSecret($secret);
-            $this->backend->setCounter(intval($this->get('counter')));
 
-            $pass = $this->backend->verify($code, $counter, (int) $this->config['window']);
+            $pass = $this->backend->verify($code, $this->get('counter'), (int) $this->config['window']);
 
             // store incremented counter value
             $this->set('counter', $this->backend->getCounter());
             $this->commit();
         } catch (\Exception $e) {
-            // LOG: exception
-            // rcube::console("VERIFY HOTP: $this->id, " . strval($e));
             $pass = false;
         }
 
-        // rcube::console('VERIFY HOTP', $this->username, $secret, $counter, $code, $pass);
         return $pass;
     }
 
@@ -121,7 +115,7 @@ class HOTP extends Base
      */
     public function get_provisioning_uri()
     {
-        if (!$this->secret) {
+        if (!$this->get('secret')) {
             // generate new secret and store it
             $this->set('secret', $this->get('secret', true));
             $this->set('counter', $this->get('counter', true));
@@ -131,8 +125,8 @@ class HOTP extends Base
 
         // TODO: deny call if already active?
 
-        $this->backend->setLabel($this->username);
-        $this->backend->setSecret($this->secret);
+        $this->backend->setLabel($this->get('username'));
+        $this->backend->setSecret($this->get('secret'));
         $this->backend->setCounter(intval($this->get('counter')));
 
         return $this->backend->getProvisioningUri();

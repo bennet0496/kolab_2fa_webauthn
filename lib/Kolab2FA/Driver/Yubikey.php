@@ -67,7 +67,6 @@ class Yubikey extends Base
         $pass  = false;
 
         if (!strlen($keyid)) {
-            // LOG: "no key registered for user $this->username"
             return false;
         }
 
@@ -81,7 +80,6 @@ class Yubikey extends Base
             }
         }
 
-        // rcube::console('VERIFY Yubikey', $this->username, $keyid, $code, $pass);
         return $pass;
     }
 

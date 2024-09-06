@@ -28,6 +28,7 @@ use Kolab2FA\Log;
 abstract class Base
 {
     public $username = null;
+
     protected $config = [];
     protected $logger;
 
