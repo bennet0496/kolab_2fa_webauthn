@@ -82,6 +82,11 @@ class kolab_2fa extends rcube_plugin
             return $args;
         }
 
+        // Single Sign On authentication, disable 2FA (Roundcube > 1.6)
+        if (!empty($args['sso'])) {
+            return $args;
+        }
+
         $rcmail = rcmail::get_instance();
 
         // parse $host URL
