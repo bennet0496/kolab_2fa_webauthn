@@ -85,8 +85,6 @@ class RcubeUser extends Base
             $factors = $this->get_factors();
             $factors[$key] = $value;
 
-            $pkey = $this->key2property('blob');
-            $save_data = [$pkey => $factors];
             $update_index = false;
 
             // remove entry
@@ -101,6 +99,9 @@ class RcubeUser extends Base
                 });
                 $update_index = true;
             }
+
+            $pkey = $this->key2property('blob');
+            $save_data = [$pkey => $factors];
 
             // update the index of active factors
             if ($update_index) {
