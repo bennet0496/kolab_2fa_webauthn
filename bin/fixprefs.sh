@@ -61,6 +61,7 @@ while ($sql_result && ($sql_arr = $db->fetch_assoc($sql_result))) {
         echo 'Updating prefs for user ' . $sql_arr['user_id'] . '...';
 
         foreach ($prefs['kolab_2fa_blob'] as $key => $value) {
+            if ($value === null) { continue; }
             [$driver] = explode(':', $key);
             if (!empty($config[$driver])) {
                 $prefs['kolab_2fa_blob'][$key] += $config[$driver];
