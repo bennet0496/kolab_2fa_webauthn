@@ -182,8 +182,11 @@ abstract class Base
 
     /**
      * Generate a random secret string
+     *
+     * A default of 32 characters results in 160bit security which is recommended by
+     * https://datatracker.ietf.org/doc/html/rfc6238
      */
-    public function generate_secret($length = 16)
+    public function generate_secret($length = 32)
     {
         // Base32 characters
         $chars = [
