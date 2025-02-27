@@ -4,7 +4,7 @@
     "description": "Kolab 2-Factor Authentication",
     "homepage": "https://git.kolab.org/diffusion/RPK/",
     "license": "AGPLv3",
-    "version": "3.5.11",
+    "version": "3.6.0",
     "authors": [
         {
             "name": "Thomas Bruederli",
@@ -15,12 +15,6 @@
             "name": "Aleksander Machniak",
             "email": "machniak@kolabsys.com",
             "role": "Developer"
-        }
-    ],
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://plugins.roundcube.net"
         }
     ],
     "require": {
