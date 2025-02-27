@@ -28,8 +28,8 @@ use rcube;
 
 class RcubeLogger implements Logger
 {
-    protected $name = null;
-    protected $level = LOG_DEBUG;
+    protected $name = '2fa';
+    protected $level = LOG_INFO;
 
     public function __construct($name = null)
     {
