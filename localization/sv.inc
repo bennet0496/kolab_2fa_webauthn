@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Localizations for the Kolab 2-Factor-Auth plugin
  *
