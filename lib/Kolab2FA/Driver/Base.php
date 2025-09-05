@@ -32,6 +32,11 @@ abstract class Base
     public $id;
     public $storage;
 
+
+    /**
+     * @var $plugin \kolab_2fa
+     */
+    protected $plugin;
     protected $config          = [];
     protected $config_keys     = [];
     protected $props           = [];
@@ -65,7 +70,7 @@ abstract class Base
     /**
      * Static factory method
      */
-    public static function factory($storage, $id, $config)
+    public static function factory($storage, $id, $config, $plugin)
     {
         [$method] = explode(':', $id);
 
@@ -73,11 +78,12 @@ abstract class Base
             'totp'    => '\\Kolab2FA\\Driver\\TOTP',
             'hotp'    => '\\Kolab2FA\\Driver\\HOTP',
             'yubikey' => '\\Kolab2FA\\Driver\\Yubikey',
+            'webauthn' => '\\Kolab2FA\\Driver\\Webauthn',
         ];
 
         $cls = $classmap[strtolower($method)];
         if ($cls && class_exists($cls)) {
-            return new $cls($storage, $config, $id);
+            return new $cls($plugin, $storage, $config, $id);
         }
 
         throw new Exception("Unknown 2FA driver '$method'");
@@ -86,12 +92,13 @@ abstract class Base
     /**
      * Default constructor
      */
-    public function __construct($storage, $config = null, $id = null)
+    public function __construct($plugin, $storage, $config = null, $id = null)
     {
         if (!is_array($config)) {
             $config = [];
         }
 
+        $this->plugin = $plugin;
         $this->storage = $storage;
         $this->props['username'] = (string) $storage->username;
 

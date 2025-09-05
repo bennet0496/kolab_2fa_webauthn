@@ -367,7 +367,7 @@ class kolab_2fa extends rcube_plugin
 
             $storage = $this->get_storage($username);
 
-            $driver = \Kolab2FA\Driver\Base::factory($storage, $factor, $config);
+            $driver = \Kolab2FA\Driver\Base::factory($storage, $factor, $config, $this);
 
             $this->drivers[$factor] = $driver;
             return $driver;

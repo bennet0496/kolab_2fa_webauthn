@@ -72,6 +72,8 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
         var lock, form = $('#kolab2fa-prop-' + method),
             props = rcmail.env.kolab_2fa_factors[method];
 
+        var ret = rcmail.triggerEvent('kolab2fa_add_factor', { method: method });
+
         if (form.length) {
             form.get(0).reset();
             form.find('img.qrcode').attr('src', 'data:image/gif;base64,R0lGODlhDwAPAIAAAMDAwAAAACH5BAEAAAAALAAAAAAPAA8AQAINhI+py+0Po5y02otnAQA7');
@@ -162,9 +164,12 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
     {
         var data = {};
         form.find('input, select').each(function(i, elem) {
+            console.log(elem);
             if (elem.name.indexOf('_prop') === 0) {
+                console.log("prop")
                 k = elem.name.match(/\[([a-z0-9_.-]+)\]$/i) ? RegExp.$1 : null;
                 if (k) {
+                    console.log(k)
                     data[k] = elem.tagName == 'SELECT' ? $('option:selected', elem).val() : $(elem).val();
                 }
             }
@@ -261,6 +266,9 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
     rcmail.addEventListener('plugin.render_data', function(data) {
         var method = data.method,
             form = $('#kolab2fa-prop-' + method);
+
+        console.log(data);
+        rcmail.triggerEvent('kolab2fa_render_data', { data: data, form: form });
 
         if (form.length) {
             $.each(data, function(field, value) {
