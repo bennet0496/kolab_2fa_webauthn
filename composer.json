@@ -25,7 +25,8 @@
         "enygma/yubikey": "~3.2",
         "web-auth/webauthn-lib": "^5.2",
         "ext-json": "*",
-        "ramsey/uuid": "^4.9"
+        "ramsey/uuid": "^4.9",
+        "ext-openssl": "*"
     },
     "config": {
         "allow-plugins": {

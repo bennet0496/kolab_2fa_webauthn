@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-const { startRegistration } = SimpleWebAuthnBrowser;
+const {startRegistration, startAuthentication} = SimpleWebAuthnBrowser;
 
 
 /**
@@ -36,7 +36,7 @@ window.rcmail && rcmail.addEventListener('kolab2fa_render_data', async (event) =
         let attResp;
         try {
             // Pass the options to the authenticator and wait for a response
-            attResp = await startRegistration({ optionsJSON });
+            attResp = await startRegistration({optionsJSON});
         } catch (error) {
             console.log(error)
         }
@@ -54,51 +54,42 @@ window.rcmail && rcmail.addEventListener('kolab2fa_render_data', async (event) =
 });
 
 
-// Start registration when the user clicks a button
-// elemBegin.addEventListener('click', async () => {
-//     // Reset success/error messages
-//     elemSuccess.innerHTML = '';
-//     elemError.innerHTML = '';
-//
-//     // GET registration options from the endpoint that calls
-//     // @simplewebauthn/server -> generateRegistrationOptions()
-//     const resp = await fetch('/generate-registration-options');
-//     const optionsJSON = await resp.json();
-//
-//     let attResp;
-//     try {
-//         // Pass the options to the authenticator and wait for a response
-//         attResp = await startRegistration({ optionsJSON });
-//     } catch (error) {
-//         // Some basic error handling
-//         if (error.name === 'InvalidStateError') {
-//             elemError.innerText = 'Error: Authenticator was probably already registered by user';
-//         } else {
-//             elemError.innerText = error;
-//         }
-//
-//         throw error;
-//     }
-//
-//     // POST the response to the endpoint that calls
-//     // @simplewebauthn/server -> verifyRegistrationResponse()
-//     const verificationResp = await fetch('/verify-registration', {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(attResp),
-//     });
-//
-//     // Wait for the results of verification
-//     const verificationJSON = await verificationResp.json();
-//
-//     // Show UI appropriate for the `verified` status
-//     if (verificationJSON && verificationJSON.verified) {
-//         elemSuccess.innerHTML = 'Success!';
-//     } else {
-//         elemError.innerHTML = `Oh no, something went wrong! Response: <pre>${JSON.stringify(
-//             verificationJSON,
-//         )}</pre>`;
-//     }
-// });
+window.rcmail && rcmail.addEventListener('init', async (event) => {
+    if (rcmail.env.task === 'login') {
+        console.log(event);
+        let name = $('#rcmlogin2fawebauthn').attr('name');
+        let value = $('#rcmlogin2fawebauthn').attr('placeholder');
+        let authopt = $('#rcmlogin2fawebauthn').attr('aria-auth-options');
+        console.log(atob(authopt));
+        $('#rcmlogin2fawebauthn').parent().html(
+            `<button type="button"  
+                class="kolab2facode button mainaction btn btn-primary form-control" id="rcmlogin2fawebauthnbutton" 
+                aria-auth-options="${authopt}">${value}</button>
+                <input type="hidden" name="${name}" id="rcmlogin2fawebauthn"/>`);
+
+        $('#rcmlogin2fawebauthnbutton').click(async (cevent) => {
+            const optionsJSON = JSON.parse(atob($(cevent.target).attr('aria-auth-options')));
+            console.log(optionsJSON);
+
+            let asseResp;
+            try {
+              // Pass the options to the authenticator and wait for a response
+              asseResp = await startAuthentication({ optionsJSON });
+            } catch (error) {
+              console.log(error);
+                $('#login-form').html(
+                    `<span style="text-align: left;">${error}</span><br/><a onclick="window.location.reload()" href="#">try again</a>`)
+              return;
+            }
+
+            const form = $("#login-form");
+            console.log(asseResp);
+            $('#rcmlogin2fawebauthn').val(JSON.stringify(asseResp));
+
+            if (form.length) {
+                form.get(0).submit();
+            }
+
+        });
+    }
+});

@@ -23,22 +23,36 @@
 
 namespace Kolab2FA\Driver;
 
+use html;
+use html_inputfield;
 use Ramsey\Uuid\Uuid;
+use Random\RandomException;
+use rcmail;
+use rcube;
 use Symfony\Component\Serializer\Encoder\JsonEncode;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Webauthn\AttestationStatement\AttestationStatementSupportManager;
 use Webauthn\AttestationStatement\NoneAttestationStatementSupport;
+use Webauthn\AuthenticatorAssertionResponse;
+use Webauthn\AuthenticatorAssertionResponseValidator;
 use Webauthn\AuthenticatorAttestationResponse;
 use Webauthn\AuthenticatorAttestationResponseValidator;
 use Webauthn\AuthenticatorSelectionCriteria;
 use Webauthn\CeremonyStep\CeremonyStepManager;
 use Webauthn\Denormalizer\WebauthnSerializerFactory;
+use Webauthn\Exception\AuthenticatorResponseVerificationException;
 use Webauthn\PublicKeyCredential;
 use Webauthn\CeremonyStep\CeremonyStepManagerFactory;
 use Webauthn\PublicKeyCredentialCreationOptions;
+use Webauthn\PublicKeyCredentialRequestOptions;
 use Webauthn\PublicKeyCredentialRpEntity;
+use Webauthn\PublicKeyCredentialSource;
 use Webauthn\PublicKeyCredentialUserEntity;
+use Webauthn\AuthenticationExtensions\AuthenticationExtension;
+use Webauthn\AuthenticationExtensions\AuthenticationExtensions;
+
 
 
 class Webauthn extends Base
@@ -76,8 +90,11 @@ class Webauthn extends Base
            "public_key_credential_source"
         ];
 
-        $this->plugin->include_script('https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js');
-        $this->plugin->include_script('webauthn.js');
+        if ($this->temporary) {
+            // TODO bundle!
+            $this->plugin->include_script('https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js');
+            $this->plugin->include_script('webauthn.js');
+        }
 
         // attestation: The attestation data that is returned from the authenticator has information
         // that could be used to track users. This option allows servers to indicate how important
@@ -99,9 +116,17 @@ class Webauthn extends Base
         $this->requestCSM = $csmFactory->requestCeremony();
     }
 
-    public function generate_registration_options()
+    /**
+     * Generate the Registration data to add authenticator
+     * Called from settings
+     *
+     * @return string
+     * @throws RandomException when system is broken
+     * @throws ExceptionInterface when serialization failed
+     */
+    public function generate_registration_options(): string
     {
-        $rcmail = \rcmail::get_instance();
+        $rcmail = rcmail::get_instance();
 
         // RP (Relaying Party) Entity i.e. the application
         $rpEntity = PublicKeyCredentialRpEntity::create(
@@ -109,8 +134,6 @@ class Webauthn extends Base
             $this->config['id'],
             $this->config['icon']
         );
-
-//        error_log(json_encode($rcmail->user));
 
         // User Entity
         $userEntity = PublicKeyCredentialUserEntity::create(
@@ -166,67 +189,209 @@ class Webauthn extends Base
         );
 
         $rcmail->session->append("plugins.kolab2fa.webauthn", "public_key_credential_creation_options", $jsonObject);
-//        $rcmail->session->append("plugins.kolab2fa.webauthn", "user_entity", $this->serializer->serialize($userEntity, 'json'));
 
         return $jsonObject;
     }
 
     /**
+     * Return Input field with Authentication data
+     * @throws RandomException
+     */
+    public function login_input(string $name, string $field_id, array $attrib, ?bool $required = false) : ?html_inputfield
+    {
+        $rcmail = rcmail::get_instance();
+        $me = $this;
+        $allowedCredentials = array_values(array_filter(array_map(
+            static function (string $factor) use ($me) {
+                [$method] = explode(':', $factor, 2);
+                if ($method === 'webauthn') {
+                    $driver = new self($me->plugin, $me->plugin->get_storage(), $me->config, $factor);
+                    /**
+                     * @var $publicKeyCredentialSource PublicKeyCredentialSource
+                     */
+                    try {
+                        $publicKeyCredentialSource = $me->serializer->deserialize(
+                            $driver->get('public_key_credential_source'),
+                            PublicKeyCredentialSource::class,
+                            'json');
+                    } catch (ExceptionInterface $e) {
+                        return null;
+                    }
+                    return $publicKeyCredentialSource->getPublicKeyCredentialDescriptor();
+                }
+                return null;
+            },
+            $this->plugin->get_storage()->enumerate()
+        )));
+
+        // Public Key Credential Request Options
+        $publicKeyCredentialRequestOptions =
+            PublicKeyCredentialRequestOptions::create(
+                random_bytes(32), // Challenge
+                allowCredentials: $allowedCredentials,
+                userVerification: AuthenticatorSelectionCriteria::USER_VERIFICATION_REQUIREMENT_PREFERRED
+            )
+        ;
+
+        try {
+            $authOptions = $this->serializer->serialize($publicKeyCredentialRequestOptions, 'json');
+            $rcmail->session->append("plugins.kolab2fa.webauthn", "public_key_credential_creation_options", $authOptions);
+
+            return new html_inputfield([
+                    'name' => $name,
+                    'class' => 'kolab2facode',
+                    'id' => $field_id,
+                    'required' => $required,
+                    'autocomplete' => 'off',
+                    'data-icon' => 'key', // for Elastic
+                    'aria-auth-options' => base64_encode($authOptions)
+                ] + $attrib);
+        } catch (ExceptionInterface $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Authenticate the WebAuthN request during Login
      *
+     * @throws \Exception when loading data failed
      */
     public function verify($code, $timestamp = null)
     {
-        error_log("Webauthn::verify() was called");
+        $rcmail = rcmail::get_instance();
+        error_log("Webauthn::verify() was called: ". $code);
         //normal user authorization
+
+        try {
+            // Response from Device
+            $publicKeyCredential = $this->serializer->deserialize($code, PublicKeyCredential::class, 'json');
+        } catch (ExceptionInterface $e) {
+            $publicKeyCredential = null;
+        } finally {
+            if (is_null($publicKeyCredential) || !$publicKeyCredential->response instanceof AuthenticatorAssertionResponse) {
+                //e.g. process here with a redirection to the public key login/MFA page.
+                rcube::raise_error("Invalid Authenticator Assertion Response", true, false);
+                return false;
+            }
+        }
+
+        try {
+            // Created during registration (updated on authentication)
+            $publicKeyCredentialSource = $this->serializer->deserialize($this->get('public_key_credential_source'), PublicKeyCredentialSource::class, 'json');
+        } catch (ExceptionInterface $e) {
+            $publicKeyCredentialSource = null;
+        } finally {
+            if ($publicKeyCredentialSource === null) {
+                // Throw an exception if the credential is not found.
+                // It can also be rejected depending on your security policy (e.g. disabled by the user because of loss)
+                rcube::raise_error("Invalid Data in User Profile.", true, false);
+                return false;
+            }
+        }
+
+        try {
+            // Created previously for authentication
+            $publicKeyCredentialRequestOptions = $this->serializer->deserialize(
+                $_SESSION["plugins"]["kolab2fa"]["webauthn"]["public_key_credential_creation_options"],
+                PublicKeyCredentialRequestOptions::class,
+                'json');
+        } catch (ExceptionInterface $e) {
+            $publicKeyCredentialRequestOptions = null;
+        } finally {
+            if ($publicKeyCredentialRequestOptions === null) {
+                // Throw an exception if the credential is not found.
+                // It can also be rejected depending on your security policy (e.g. disabled by the user because of loss)
+                rcube::raise_error("Invalid Session Data.", true, false);
+                return false;
+            }
+        }
+
+        $authenticatorAssertionResponseValidator = AuthenticatorAssertionResponseValidator::create(
+            $this->requestCSM
+        );
+
+        try {
+            $publicKeyCredentialSource = $authenticatorAssertionResponseValidator->check(
+                $publicKeyCredentialSource,
+                $publicKeyCredential->response,
+                $publicKeyCredentialRequestOptions,
+                $this->config['id'],
+                $rcmail->user->ID ? Uuid::uuid5($this->config['namespace_uuid'], $rcmail->user->ID)->toString() : null
+            );
+
+            $this->set('public_key_credential_source',$this->serializer->serialize($publicKeyCredentialSource, 'json'));
+        } catch (AuthenticatorResponseVerificationException $e) {
+            error_log("Webauthn::verify() failed: ". $e->getMessage());
+            return false;
+        } catch (ExceptionInterface $e) {
+            rcube::raise_error($e, true, false);
+            return true;
+        }
+
         return true;
     }
 
     /**
      * @override
+     * @throws \Exception on data errors
      */
-    public function set($key, $value, $persistent = true)
+    public function set($key, $value, $persistent = true): bool
     {
-        $rcmail = \rcmail::get_instance();
-
-        error_log("Webauthn::set() was called");
         if ($key == 'creation_response') {
-            // Response Verification
-            error_log('Webauthn::set() creation_response '. json_encode([$key, $value]));
+            // Verify the registration response
 
-            $publicKeyCredential = $this->serializer->deserialize(
-                $value,
-                PublicKeyCredential::class,
-                'json'
-            );
-
-
-            if (!$publicKeyCredential->response instanceof AuthenticatorAttestationResponse) {
-                //e.g. process here with a redirection to the public key creation page.
-                //TODO
-                return false;
+            try {
+                // Response form the device
+                $publicKeyCredential = $this->serializer->deserialize(
+                    $value,
+                    PublicKeyCredential::class,
+                    'json'
+                );
+            } catch (ExceptionInterface $e) {
+                $publicKeyCredential = null;
+            } finally {
+                if (!$publicKeyCredential->response instanceof AuthenticatorAttestationResponse) {
+                    //e.g. process here with a redirection to the public key creation page.
+                    \rcube::raise_error("Invalid Authenticator Assertion Response", true, false);
+                    return false;
+                }
             }
 
-            $publicKeyCredentialCreationOptions = $this->serializer->deserialize(
-                $_SESSION['plugins']['kolab2fa']['webauthn']['public_key_credential_creation_options'],
-                PublicKeyCredentialCreationOptions::class,
-                'json'
-            );
-
+            try {
+                // Created previously for registration
+                $publicKeyCredentialCreationOptions = $this->serializer->deserialize(
+                    $_SESSION['plugins']['kolab2fa']['webauthn']['public_key_credential_creation_options'],
+                    PublicKeyCredentialCreationOptions::class,
+                    'json'
+                );
+            } catch (ExceptionInterface $e) {
+                \rcube::raise_error("Invalid Session Data", true, false);
+                return false;
+            }
 
             $authenticatorAttestationResponseValidator = new AuthenticatorAttestationResponseValidator(
                 $this->creationCSM
             );
 
-            $publicKeyCredentialSource = $authenticatorAttestationResponseValidator->check(
-                $publicKeyCredential->response,
-                $publicKeyCredentialCreationOptions,
-                $this->config['id']
-            );
+            try {
+                $publicKeyCredentialSource = $authenticatorAttestationResponseValidator->check(
+                    $publicKeyCredential->response,
+                    $publicKeyCredentialCreationOptions,
+                    $this->config['id']
+                );
+            } catch (\Throwable $e) {
+                \rcube::raise_error("Invalid Authenticator Data", true, false);
+                return false;
+            }
 
-            // user data to persist
-            $key = "public_key_credential_source";
-            $value = $this->serializer->serialize($publicKeyCredentialSource, 'json');
-            error_log("Webauthn::set() ".json_encode([$key, $value]));
+            try {
+                // user data to persist
+                $key = "public_key_credential_source";
+                $value = $this->serializer->serialize($publicKeyCredentialSource, 'json');
+            } catch (ExceptionInterface $e) {
+                \rcube::raise_error("Failed to save data", true, false);
+                return false;
+            }
         }
 
         return parent::set($key, $value, $persistent);
@@ -235,7 +400,7 @@ class Webauthn extends Base
     /**
      * @override
      */
-    protected function set_user_prop($key, $value)
+    protected function set_user_prop($key, $value): bool
     {
         // set created timestamp
         if ($key !== 'created' && !isset($this->created)) {

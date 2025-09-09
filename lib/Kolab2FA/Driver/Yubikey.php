@@ -62,6 +62,7 @@ class Yubikey extends Base
      */
     public function verify($code, $timestamp = null)
     {
+        error_log("Yubikey::verify() was called");
         // get my secret from the user storage
         $keyid = $this->get('yubikeyid');
         $pass  = false;

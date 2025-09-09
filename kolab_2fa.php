@@ -180,6 +180,7 @@ class kolab_2fa extends rcube_plugin
 
         // focus the code input field on load
         $this->api->output->add_script('$("input.kolab2facode").first().select();', 'docready');
+        $this->api->output->add_header('<style>#login-form table tr:not(:first-child)::before { content: \'' . $this->gettext('or') . '\'; text-align:center; width: 100%}</style>');
 
         $this->api->output->send('login');
     }
@@ -288,27 +289,18 @@ class kolab_2fa extends rcube_plugin
 
         // render input for each configured auth method
         foreach ($methods as $i => $method) {
-            if ($row++ > 0) {
-                $table->add(
-                    ['colspan' => 2, 'class' => 'title hint', 'style' => 'text-align:center'],
-                    $this->gettext('or')
-                );
-            }
 
             $field_id = "rcmlogin2fa$method";
-            $input_code = new html_inputfield([
-                    'name'         => "_${nonce}_${method}",
-                    'class'        => 'kolab2facode',
-                    'id'           => $field_id,
-                    'required'     => $required,
-                    'autocomplete' => 'off',
-                    'data-icon'    => 'key', // for Elastic
-                ] + $attrib);
+
+            error_log(json_encode(["_{$nonce}_$method", $field_id, $attrib, $required]));
+
+            $input_code = $this->get_driver($method)->login_input("_{$nonce}_$method", $field_id, $attrib, $required);
+
             $table->add('title', html::label($field_id, html::quote($this->gettext($method))));
-            $table->add('input', $input_code->show(''));
+            $table->add('input', $input_code ? $input_code->show('') : "");
         }
 
-        $out  = $input_task->show();
+        $out = $input_task->show();
         $out .= $input_action->show();
         $out .= $input_tzone->show();
         $out .= $input_url->show();

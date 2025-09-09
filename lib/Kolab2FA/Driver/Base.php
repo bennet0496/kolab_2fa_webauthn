@@ -23,6 +23,8 @@
 
 namespace Kolab2FA\Driver;
 
+use html_inputfield;
+
 /**
  * Kolab 2-Factor-Authentication Driver base class
  */
@@ -314,6 +316,18 @@ abstract class Base
         }
 
         return false;
+    }
+
+    public function login_input(string $name, string $field_id, array $attrib, ?bool $required = false) : ?\html_inputfield
+    {
+        return new html_inputfield([
+                'name'         => $name,
+                'class'        => 'kolab2facode',
+                'id'           => $field_id,
+                'required'     => $required,
+                'autocomplete' => 'off',
+                'data-icon'    => 'key', // for Elastic
+            ] + $attrib);
     }
 
     /**

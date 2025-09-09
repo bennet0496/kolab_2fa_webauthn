@@ -20,6 +20,7 @@ $labels['settingstitle'] = 'Authentication Factors';
 $labels['totp'] = 'Mobile App (TOTP)';
 $labels['hotp'] = 'Mobile App (HOTP)';
 $labels['yubikey'] = 'Yubikey';
+$labels['webauthn'] = 'Security Key';
 
 $labels['or'] = 'or';
 $labels['yes'] = 'yes';
