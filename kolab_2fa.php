@@ -106,14 +106,13 @@ class kolab_2fa extends rcube_plugin
                 $domain = $username_domain;
             }
 
-            if ($domain = rcube_utils::parse_host((string) $domain, $hostname)) {
+            if ($domain = rcube_utils::parse_host((string)$domain, $hostname)) {
                 $pos = strpos($username, '@');
 
                 // force configured domains
                 if ($pos !== false && $rcmail->config->get('username_domain_forced')) {
                     $username = substr($username, 0, $pos) . '@' . $domain;
-                }
-                // just add domain if not specified
+                } // just add domain if not specified
                 elseif ($pos === false) {
                     $username .= '@' . $domain;
                 }
@@ -134,17 +133,16 @@ class kolab_2fa extends rcube_plugin
 
         // 2a. let plugins provide the list of active authentication factors
         $lookup = $rcmail->plugins->exec_hook('kolab_2fa_lookup', [
-            'user'    => $username,
-            'host'    => $hostname,
+            'user' => $username,
+            'host' => $hostname,
             'factors' => null,
-            'check'   => $rcmail->config->get('kolab_2fa_check', true),
+            'check' => $rcmail->config->get('kolab_2fa_check', true),
         ]);
 
         $factors = [];
         if (isset($lookup['factors'])) {
             $factors = (array)$lookup['factors'];
-        }
-        // 2b. check storage if this user has 2FA enabled
+        } // 2b. check storage if this user has 2FA enabled
         elseif ($lookup['check'] !== false && ($storage = $this->get_storage($username))) {
             $factors = (array)$storage->enumerate();
         }
@@ -154,12 +152,12 @@ class kolab_2fa extends rcube_plugin
             $factors = array_unique($factors);
 
             // 3. flag session for 2nd factor verification
-            $_SESSION['kolab_2fa_time']    = time();
-            $_SESSION['kolab_2fa_nonce']   = bin2hex(openssl_random_pseudo_bytes(32));
+            $_SESSION['kolab_2fa_time'] = time();
+            $_SESSION['kolab_2fa_nonce'] = bin2hex(openssl_random_pseudo_bytes(32));
             $_SESSION['kolab_2fa_factors'] = $factors;
 
             $_SESSION['username'] = $username;
-            $_SESSION['host']     = $args['host'];
+            $_SESSION['host'] = $args['host'];
             $_SESSION['password'] = $rcmail->encrypt($args['pass']);
 
             // 4. render to 2nd auth step
@@ -194,10 +192,10 @@ class kolab_2fa extends rcube_plugin
 
         $rcmail = rcmail::get_instance();
 
-        $time     = $_SESSION['kolab_2fa_time'];
-        $nonce    = $_SESSION['kolab_2fa_nonce'];
-        $factors  = (array) $_SESSION['kolab_2fa_factors'];
-        $expired  = $time < time() - $rcmail->config->get('kolab_2fa_timeout', 120);
+        $time = $_SESSION['kolab_2fa_time'];
+        $nonce = $_SESSION['kolab_2fa_nonce'];
+        $factors = (array)$_SESSION['kolab_2fa_factors'];
+        $expired = $time < time() - $rcmail->config->get('kolab_2fa_timeout', 120);
         $username = !empty($_SESSION['kolab_auth_admin']) ? $_SESSION['kolab_auth_admin'] : $_SESSION['username'];
 
         if (!empty($factors) && !empty($nonce) && !$expired) {
@@ -208,7 +206,7 @@ class kolab_2fa extends rcube_plugin
                 [$method] = explode(':', $factor, 2);
 
                 // verify the submitted code
-                $code = rcube_utils::get_input_value("_${nonce}_${method}", rcube_utils::INPUT_POST);
+                $code = rcube_utils::get_input_value("_{$nonce}_{$method}", rcube_utils::INPUT_POST);
                 $this->login_verified = $this->verify_factor_auth($factor, $code, $username);
 
                 // accept first successful method
@@ -225,7 +223,7 @@ class kolab_2fa extends rcube_plugin
             $_POST['_pass'] = $rcmail->decrypt($_SESSION['password']);
 
             if (!empty($_SESSION['kolab_auth_admin'])) {
-                $_POST['_user']    = $_SESSION['kolab_auth_admin'];
+                $_POST['_user'] = $_SESSION['kolab_auth_admin'];
                 $_POST['_loginas'] = $_SESSION['username'];
             }
         }
@@ -265,7 +263,7 @@ class kolab_2fa extends rcube_plugin
      */
     public function auth_form($attrib = [])
     {
-        $form_name  = !empty($attrib['form']) ? $attrib['form'] : 'form';
+        $form_name = !empty($attrib['form']) ? $attrib['form'] : 'form';
         $nonce = $_SESSION['kolab_2fa_nonce'];
 
         $methods = array_unique(array_map(
@@ -277,10 +275,10 @@ class kolab_2fa extends rcube_plugin
         ));
 
         // forward these values as the regular login screen would submit them
-        $input_task   = new html_hiddenfield(['name' => '_task', 'value' => 'login']);
+        $input_task = new html_hiddenfield(['name' => '_task', 'value' => 'login']);
         $input_action = new html_hiddenfield(['name' => '_action', 'value' => 'plugin.kolab-2fa-login']);
-        $input_tzone  = new html_hiddenfield(['name' => '_timezone', 'id' => 'rcmlogintz', 'value' => rcube_utils::get_input_value('_timezone', rcube_utils::INPUT_POST)]);
-        $input_url    = new html_hiddenfield(['name' => '_url', 'id' => 'rcmloginurl', 'value' => rcube_utils::get_input_value('_url', rcube_utils::INPUT_POST)]);
+        $input_tzone = new html_hiddenfield(['name' => '_timezone', 'id' => 'rcmlogintz', 'value' => rcube_utils::get_input_value('_timezone', rcube_utils::INPUT_POST)]);
+        $input_url = new html_hiddenfield(['name' => '_url', 'id' => 'rcmloginurl', 'value' => rcube_utils::get_input_value('_url', rcube_utils::INPUT_POST)]);
 
         // create HTML table with two cols
         $table = new html_table(['cols' => 2]);
@@ -311,8 +309,8 @@ class kolab_2fa extends rcube_plugin
             $out .= html::p(
                 'formbuttons',
                 html::tag('button', [
-                    'type'  => 'submit',
-                    'id'    => 'rcmloginsubmit',
+                    'type' => 'submit',
+                    'id' => 'rcmloginsubmit',
                     'class' => 'button mainaction save',
                 ], $this->gettext('continue'))
             );
@@ -329,7 +327,7 @@ class kolab_2fa extends rcube_plugin
     /**
      * Load driver class for the given authentication factor
      *
-     * @param string $factor   Factor identifier (<method>:<id>)
+     * @param string $factor Factor identifier (<method>:<id>)
      * @param string $username Username (email)
      *
      * @return Kolab2FA\Driver\Base|false
@@ -428,9 +426,9 @@ class kolab_2fa extends rcube_plugin
         // register as settings action
         $args['actions'][] = [
             'action' => 'plugin.kolab-2fa',
-            'class'  => 'twofactorauth',
-            'label'  => 'settingslist',
-            'title'  => 'settingstitle',
+            'class' => 'twofactorauth',
+            'label' => 'settingslist',
+            'title' => 'settingstitle',
             'domain' => 'kolab_2fa',
         ];
 
@@ -504,7 +502,7 @@ class kolab_2fa extends rcube_plugin
         foreach ($drivers as $j => $method) {
             $out .= $this->settings_factor($method, $attrib);
             $env_methods[$method] = [
-                'name'   => $this->gettext($method),
+                'name' => $this->gettext($method),
                 'active' => 0,
             ];
         }
@@ -563,8 +561,8 @@ class kolab_2fa extends rcube_plugin
 
                     default:
                         $input = new html_inputfield([
-                                'size' => !empty($prop['size']) ? $prop['size'] : 30,
-                                'disabled' => empty($prop['editable']),
+                            'size' => !empty($prop['size']) ? $prop['size'] : 30,
+                            'disabled' => empty($prop['editable']),
                         ]);
                 }
 
@@ -603,9 +601,9 @@ class kolab_2fa extends rcube_plugin
                 [
                     'method' => 'post',
                     'action' => '#',
-                    'id'     => 'kolab2fa-prop-' . $method,
-                    'style'  => 'display:none',
-                    'class'  => 'propform',
+                    'id' => 'kolab2fa-prop-' . $method,
+                    'style' => 'display:none',
+                    'class' => 'propform',
                 ],
                 html::tag(
                     'fieldset',
@@ -644,7 +642,7 @@ class kolab_2fa extends rcube_plugin
     public function settings_save()
     {
         $method = rcube_utils::get_input_value('_method', rcube_utils::INPUT_POST);
-        $data   = @json_decode(rcube_utils::get_input_value('_data', rcube_utils::INPUT_POST), true);
+        $data = @json_decode(rcube_utils::get_input_value('_data', rcube_utils::INPUT_POST), true);
 
         $rcmail = rcmail::get_instance();
         $storage = $this->get_storage($rcmail->get_user_name());
@@ -667,8 +665,8 @@ class kolab_2fa extends rcube_plugin
                 if (!empty($verify_code)) {
                     if (!$driver->verify($verify_code, $timestamp)) {
                         $this->api->output->command('plugin.verify_response', [
-                            'id'      => $driver->id,
-                            'method'  => $driver->method,
+                            'id' => $driver->id,
+                            'method' => $driver->method,
                             'success' => false,
                             'message' => str_replace('$method', $this->gettext($driver->method), $this->gettext('codeverificationfailed')),
                         ]);
@@ -700,7 +698,7 @@ class kolab_2fa extends rcube_plugin
             $this->api->output->command('plugin.save_success', [
                     'method' => $method,
                     'active' => $data !== false,
-                    'id'     => $driver->id] + $save_data);
+                    'id' => $driver->id] + $save_data);
         } elseif ($errors) {
             $this->api->output->show_message($this->gettext('factorsaveerror'), 'error');
             $this->api->output->command('plugin.reset_form', $data !== false ? $method : null);
@@ -734,11 +732,11 @@ class kolab_2fa extends rcube_plugin
 
                     $qr = new Endroid\QrCode\QrCode();
                     $qr->setText($uri)
-                       ->setSize(240)
-                       ->setPadding(10)
-                       ->setErrorCorrection('high')
-                       ->setForegroundColor(['r' => 0, 'g' => 0, 'b' => 0, 'a' => 0])
-                       ->setBackgroundColor(['r' => 255, 'g' => 255, 'b' => 255, 'a' => 0]);
+                        ->setSize(240)
+                        ->setPadding(10)
+                        ->setErrorCorrection('high')
+                        ->setForegroundColor(['r' => 0, 'g' => 0, 'b' => 0, 'a' => 0])
+                        ->setBackgroundColor(['r' => 255, 'g' => 255, 'b' => 255, 'a' => 0]);
                     $data['qrcode'] = base64_encode($qr->get());
                 } catch (Exception $e) {
                     rcube::raise_error($e, true, false);
