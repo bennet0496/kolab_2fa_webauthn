@@ -188,7 +188,10 @@ class Webauthn extends Base
             ]
         );
 
-        $rcmail->session->append("plugins.kolab2fa.webauthn", "public_key_credential_creation_options", $jsonObject);
+        $_SESSION['kolab_2fa_webauthn'] = [
+            ...($_SESSION['kolab_2fa_webauthn'] ?? []),
+            "public_key_credential_creation_options"=> $jsonObject
+        ];
 
         return $jsonObject;
     }
@@ -221,7 +224,7 @@ class Webauthn extends Base
                 }
                 return null;
             },
-            $this->plugin->get_storage()->enumerate()
+            $this->plugin->get_storage()->enumerate() //TODO: factor may be provided by other plugin
         )));
 
         // Public Key Credential Request Options
@@ -235,7 +238,10 @@ class Webauthn extends Base
 
         try {
             $authOptions = $this->serializer->serialize($publicKeyCredentialRequestOptions, 'json');
-            $rcmail->session->append("plugins.kolab2fa.webauthn", "public_key_credential_creation_options", $authOptions);
+            $_SESSION['kolab_2fa_webauthn'] = [
+                ...($_SESSION['kolab_2fa_webauthn'] ?? []),
+                "public_key_credential_creation_options" => $authOptions
+            ];
 
             return new html_inputfield([
                     'name' => $name,
@@ -292,9 +298,10 @@ class Webauthn extends Base
         try {
             // Created previously for authentication
             $publicKeyCredentialRequestOptions = $this->serializer->deserialize(
-                $_SESSION["plugins"]["kolab2fa"]["webauthn"]["public_key_credential_creation_options"],
+                $_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"],
                 PublicKeyCredentialRequestOptions::class,
                 'json');
+            unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
         } catch (ExceptionInterface $e) {
             $publicKeyCredentialRequestOptions = null;
         } finally {
@@ -360,10 +367,11 @@ class Webauthn extends Base
             try {
                 // Created previously for registration
                 $publicKeyCredentialCreationOptions = $this->serializer->deserialize(
-                    $_SESSION['plugins']['kolab2fa']['webauthn']['public_key_credential_creation_options'],
+                    $_SESSION['kolab_2fa_webauthn']['public_key_credential_creation_options'],
                     PublicKeyCredentialCreationOptions::class,
                     'json'
                 );
+                unset($_SESSION['kolab_2fa_webauthn']['public_key_credential_creation_options']);
             } catch (ExceptionInterface $e) {
                 \rcube::raise_error("Invalid Session Data", true, false);
                 return false;
