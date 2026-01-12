@@ -203,29 +203,17 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
                 highsec_call_stack.push(func);
 
                 // TODO: list all active factors to choose from
-                var html = String($('#kolab2fa-highsecuritydialog').html()).replace('$name', name);
+                // var html = String($('#kolab2fa-highsecuritydialog').html()).replace('$name', name);
+                const template = document.querySelector('#kolab2fa-highsecuritydialog');
 
                 highsec_dialog = rcmail.show_popup_dialog(
-                    html,
+                    template.content.cloneNode(true),
                     rcmail.get_label('highsecurityrequired', 'kolab_2fa'),
                     [
                         {
                             text: rcmail.gettext('enterhighsecurity', 'kolab_2fa'),
                             click: function(e) {
-                                var lock, code = highsec_dialog.find('input[name="_code"]').val();
-
-                                if (code && code.length) {
-                                    lock = rcmail.set_busy(true, 'verifying');
-                                    rcmail.http_post('plugin.kolab-2fa-verify', {
-                                        _method: method,
-                                        _code: code,
-                                        _session: 1,
-                                        _timestamp: highsec_dialog.data('timestamp')
-                                    }, lock);
-                                }
-                                else {
-                                    highsec_dialog.find('input[name="_code"]').select();
-                                }
+                                $(e.target).closest('#highsec-form').requestSubmit();
                             },
                             'class': 'mainaction save'
                         },
@@ -240,7 +228,57 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
                     {
                         open: function(event, ui) {
                             // submit code on <Enter>
-                            $(event.target).find('input[name="_code"]').keypress(function(e) {
+                            console.log(event,ui);
+
+                            $(event.target).find('form table tr').each(function() {
+                                var input = $('input,select', this),
+                                    label = $('label', this),
+                                    icon_name = input.data('icon'),
+                                    icon = $('<i>').attr('class', 'input-group-text icon ' + input.attr('name').replace('_', ''));
+
+                                if (icon_name) {
+                                    icon.addClass(icon_name);
+                                }
+
+                                $(this).addClass('form-group row');
+                                label.parent().css('display', 'none');
+                                input.addClass(input.is('select') ? 'custom-select' : 'form-control')
+                                    .attr('placeholder', label.text())
+                                    .keypress(function(e) {
+                                        if (e.which == 13) {
+                                            $(e.target).closest('#highsec-form').requestSubmit();
+                                        }
+                                    })
+                                    .before($('<span class="input-group-prepend">').append(icon))
+                                    .parent().addClass('input-group input-group-lg');
+                            });
+
+                            rcmail.triggerEvent('kolab2fa_style_elements', { form: $("#highsec-form") });
+
+                            //$("#highsec-form").on('submit',
+                            document.querySelector('#highsec-form').addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                console.log("#highsec-form submit", e);
+                                let formData = Array.from(e.currentTarget.elements).reduce(function(a, b) {
+                                    if (!["_task", "_action"].includes(b.name))
+                                        a[b.name] = b.value;
+                                    return a;
+                                }, {});
+
+                                console.log(formData);
+
+                                let lock = rcmail.set_busy(true, 'verifying');
+
+                                rcmail.http_post('plugin.kolab-2fa-verify', {
+                                    ...formData,
+                                    _session: 1,
+                                    _timestamp: highsec_dialog.data('timestamp')
+                                }, lock);
+
+                                return false;
+                            });
+
+                            $(event.target).closest('input.kolab2facode').keypress(function(e) {
                                 if (e.which == 13) {
                                     $(e.target).closest('.ui-dialog').find('button.mainaction').click();
                                 }

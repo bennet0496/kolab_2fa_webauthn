@@ -2,8 +2,14 @@
   <library name="jquery" type="javaScript">
     <properties>
       <option name="frameworkName" value="jQuery" />
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/../../../roundcube-plugins/jquery-3.5.1.js" />
+      </sourceFilesUrls>
     </properties>
-    <CLASSES />
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../../roundcube-plugins/jquery-3.5.1.js" />
+      <root url="file://$PROJECT_DIR$/../../program/js/jquery.min.js" />
+    </CLASSES>
     <JAVADOC />
     <SOURCES />
   </library>

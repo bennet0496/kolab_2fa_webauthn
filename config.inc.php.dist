@@ -96,7 +96,11 @@ $config['kolab_2fa_storage_config'] = [
 
 // force a lookup for active authentication factors for this user.
 // to be set by another plugin (e.g. kolab_auth based on LDAP roles)
-// $config['kolab_2fa_check'] = true;
+$config['kolab_2fa_check'] = true;
+
+// force user to set up 2fa if non-existent.
+// to be set by another plugin (e.g. kolab_auth based on LDAP roles)
+$config['kolab_2fa_enforce'] = false;
 
 // timeout for 2nd factor auth submission (in seconds)
 $config['kolab_2fa_timeout'] = 120;
