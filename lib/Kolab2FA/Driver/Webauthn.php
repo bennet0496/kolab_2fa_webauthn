@@ -301,7 +301,7 @@ class Webauthn extends Base
                 $_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"],
                 PublicKeyCredentialRequestOptions::class,
                 'json');
-            unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
+//            unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
         } catch (ExceptionInterface $e) {
             $publicKeyCredentialRequestOptions = null;
         } finally {
@@ -309,6 +309,7 @@ class Webauthn extends Base
                 // Throw an exception if the credential is not found.
                 // It can also be rejected depending on your security policy (e.g. disabled by the user because of loss)
                 rcube::raise_error("Invalid Session Data.", true, false);
+                unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
                 return false;
             }
         }
@@ -332,9 +333,11 @@ class Webauthn extends Base
             return false;
         } catch (ExceptionInterface $e) {
             rcube::raise_error($e, true, false);
+            unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
             return true;
         }
 
+        unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
         return true;
     }
 
