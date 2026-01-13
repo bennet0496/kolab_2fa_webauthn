@@ -1,20 +1,25 @@
 {
-    "name": "kolab/kolab_2fa",
+    "name": "bennet0496/kolab_2fa",
     "type": "roundcube-plugin",
-    "description": "Kolab 2-Factor Authentication",
-    "homepage": "https://git.kolab.org/diffusion/RPK/",
+    "description": "Kolab 2-Factor Authentication with Webauthn",
+    "homepage": "https://github.com/bennet0496/kolab_2fa_webauthn",
     "license": "AGPLv3",
-    "version": "3.6.0",
+    "version": "4.0.0",
     "authors": [
         {
             "name": "Thomas Bruederli",
             "email": "bruederli@kolabsys.com",
-            "role": "Lead"
+            "role": "Original Lead"
         },
         {
             "name": "Aleksander Machniak",
             "email": "machniak@kolabsys.com",
-            "role": "Developer"
+            "role": "Original Developer"
+        },
+        {
+          "name": "Bennet Becker",
+          "email": "dev@bennet.cc",
+          "role": "Fork Developer"
         }
     ],
     "require": {
