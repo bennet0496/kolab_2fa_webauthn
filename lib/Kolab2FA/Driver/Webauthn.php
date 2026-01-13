@@ -86,13 +86,44 @@ class Webauthn extends Base
             "namespace_uuid" => Uuid::uuid5(Uuid::NAMESPACE_URL, $this->config["id"])->toString()
         ];
 
+        if (empty($this->config["authenticator_selection_criteria"])) {
+            $this->config["authenticator_selection_criteria"] = [
+                'authenticator_attachment' => null,
+                'user_verification' => 'preferred',
+                'resident_key' => 'preferred'
+            ];
+        }
+
+        if ($this->config["authenticator_selection_criteria"]["authenticator_attachment"] == 'no-preference' ||
+            !in_array($this->config["authenticator_selection_criteria"]["authenticator_attachment"],
+                AuthenticatorSelectionCriteria::AUTHENTICATOR_ATTACHMENTS)) {
+            $this->config["authenticator_selection_criteria"]["authenticator_attachment"] = null;
+        }
+
+        if ($this->config["authenticator_selection_criteria"]["resident_key"] == 'no-preference') {
+            $this->config["authenticator_selection_criteria"]["resident_key"] = null;
+        }
+
+        if (!in_array($this->config["authenticator_selection_criteria"]["resident_key"],
+            AuthenticatorSelectionCriteria::RESIDENT_KEY_REQUIREMENTS)) {
+            $this->config["authenticator_selection_criteria"]["resident_key"] = 'preferred';
+        }
+
+        if (!in_array($this->config["authenticator_selection_criteria"]["user_verification"],
+            AuthenticatorSelectionCriteria::USER_VERIFICATION_REQUIREMENTS)) {
+            $this->config["authenticator_selection_criteria"]["user_verification"] = 'preferred';
+        }
+
         $this->allowed_props += [
            "public_key_credential_source"
         ];
 
         if ($this->temporary) {
-            // TODO bundle!
-            $this->plugin->include_script('https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js');
+            if ($this->config["browser_script"] == 'lastest_remote') {
+                $this->plugin->include_script('https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js');
+            } else {
+                $this->plugin->include_script('simplewebauthn_browser_13.2.2_index.umd.min.js');
+            }
             $this->plugin->include_script('webauthn.js');
         }
 
@@ -146,28 +177,10 @@ class Webauthn extends Base
         // Challenge
         $challenge = random_bytes(16);
 
-        // authenticatorAttachment: This optional object helps relying parties make further restrictions
-        // on the type of authenticators allowed for registration. In this example we are indicating we
-        // want to register a cross-platform authenticator (like a Yubikey) instead of a platform
-        // authenticator like Windows Hello or Touch ID. Read the spec.
-        //
-        // userVerification: The technical process by which an authenticator locally authorizes the
-        // invocation of the authenticatorMakeCredential and authenticatorGetAssertion operations. User
-        // verification MAY be instigated through various authorization gesture modalities; for example,
-        // through a touch plus pin code, password entry, or biometric recognition (e.g., presenting a
-        // fingerprint) [ISOBiometricVocabulary]. The intent is to distinguish individual users. See
-        // https://w3c.github.io/webauthn/#user-verification
-        //
-        // residentKey: Specifies the extent to which the Relying Party desires to create a client-side
-        // discoverable credential. For historical reasons the naming retains the deprecated “resident”
-        // terminology. The value SHOULD be a member of ResidentKeyRequirement but client platforms MUST
-        // ignore unknown values, treating an unknown value as if the member does not exist. If no value
-        // is given then the effective value is required if requireResidentKey is true or discouraged if
-        // it is false or absent.
         $authenticatorSelectionCriteria = AuthenticatorSelectionCriteria::create(
-            authenticatorAttachment: AuthenticatorSelectionCriteria::AUTHENTICATOR_ATTACHMENT_NO_PREFERENCE,
-            userVerification: AuthenticatorSelectionCriteria::USER_VERIFICATION_REQUIREMENT_PREFERRED,
-            residentKey:AuthenticatorSelectionCriteria::RESIDENT_KEY_REQUIREMENT_PREFERRED,
+            authenticatorAttachment: $this->config["authenticator_selection_criteria"]["authenticator_attachment"],
+            userVerification: $this->config["authenticator_selection_criteria"]["user_verification"],
+            residentKey: $this->config["authenticator_selection_criteria"]["resident_key"],
         );
 
         $publicKeyCredentialCreationOptions =
@@ -217,7 +230,7 @@ class Webauthn extends Base
                             $driver->get('public_key_credential_source'),
                             PublicKeyCredentialSource::class,
                             'json');
-                    } catch (ExceptionInterface $e) {
+                    } catch (ExceptionInterface) {
                         return null;
                     }
                     return $publicKeyCredentialSource->getPublicKeyCredentialDescriptor();
@@ -232,7 +245,7 @@ class Webauthn extends Base
             PublicKeyCredentialRequestOptions::create(
                 random_bytes(32), // Challenge
                 allowCredentials: $allowedCredentials,
-                userVerification: AuthenticatorSelectionCriteria::USER_VERIFICATION_REQUIREMENT_PREFERRED
+                userVerification: $this->config["authenticator_selection_criteria"]["user_verification"]
             )
         ;
 
@@ -252,7 +265,7 @@ class Webauthn extends Base
                     'data-icon' => 'key', // for Elastic
                     'aria-auth-options' => base64_encode($authOptions)
                 ] + $attrib);
-        } catch (ExceptionInterface $e) {
+        } catch (ExceptionInterface) {
             return null;
         }
     }
@@ -262,7 +275,7 @@ class Webauthn extends Base
      *
      * @throws \Exception when loading data failed
      */
-    public function verify($code, $timestamp = null)
+    public function verify($code, $timestamp = null): bool
     {
         $rcmail = rcmail::get_instance();
         error_log("Webauthn::verify() was called: ". $code);
@@ -301,7 +314,8 @@ class Webauthn extends Base
                 $_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"],
                 PublicKeyCredentialRequestOptions::class,
                 'json');
-//            unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
+            // Can't reset session yet. we might want to check multiple authenticators
+            // unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
         } catch (ExceptionInterface $e) {
             $publicKeyCredentialRequestOptions = null;
         } finally {

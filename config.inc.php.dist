@@ -127,3 +127,45 @@ $config['kolab_2fa_yubikey'] = [
     // 'hosts'  => array('api.myhost1.com','api2.myhost.com'),
     'use_https' => true,  // connect via https if set to true
 ];
+
+$config['kolab_2fa_webauthn'] = array(
+    // 'issuer'   => 'Roundcube',
+    'id' => 'localhost',
+    'allowed_origins' => ['http://127.0.0.1:9000', 'http://localhost:9000'],
+    // Your application may also have a logo. You can indicate this logo as third argument.
+    // Please note that for safety reason this icon should be an authenticated URL, i.e. an
+    // image that uses the data scheme
+    // @see https://webauthn-doc.spomky-labs.com/v5.2/prerequisites/the-relying-party#relying-party-icon
+    'icon' => null,
+    'authenticator_selection_criteria' => [
+        // authenticator_attachment: This optional object helps relying parties make further restrictions
+        // on the type of authenticators allowed for registration. In this example we are indicating we
+        // want to register a cross-platform authenticator (like a Yubikey) instead of a platform
+        // authenticator like Windows Hello or Touch ID. Read the spec.
+        //
+        // Valid Options: no-preference (null), platform, cross-platform
+        'authenticator_attachment' => null,
+        // user_verification: The technical process by which an authenticator locally authorizes the
+        // invocation of the authenticatorMakeCredential and authenticatorGetAssertion operations. User
+        // verification MAY be instigated through various authorization gesture modalities; for example,
+        // through a touch plus pin code, password entry, or biometric recognition (e.g., presenting a
+        // fingerprint) [ISOBiometricVocabulary]. The intent is to distinguish individual users. See
+        // https://w3c.github.io/webauthn/#user-verification
+        //
+        // Valid Options: required, preferred, discouraged
+        'user_verification' => 'preferred',
+        // resident_key: Specifies the extent to which the Relying Party desires to create a client-side
+        // discoverable credential. For historical reasons the naming retains the deprecated “resident”
+        // terminology. The value SHOULD be a member of ResidentKeyRequirement but client platforms MUST
+        // ignore unknown values, treating an unknown value as if the member does not exist. If no value
+        // is given then the effective value is required if requireResidentKey is true or discouraged if
+        // it is false or absent.
+        //
+        // Valid Options: no-preference (null), required, preferred, discouraged
+        'resident_key' => 'preferred'
+    ],
+    // If value is 'lastest_remote', use latest @simplewebauthn/browser script
+    // from https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js
+    // instead of bundled one
+    'browser_script' => 'bundled'
+);
