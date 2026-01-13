@@ -17,6 +17,8 @@ This Fork can not be used at the same time as the base version due to Class nami
 conflicts. However, it can be used as a drop-in replacement, as reuse of previously
 saved TOTP/HTOP/Yubikey tokens should just work.
 
+**Please back up your database before migrating!!!**
+
 Drivers
 -------
 
