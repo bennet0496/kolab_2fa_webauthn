@@ -1,4 +1,4 @@
-Kolab Multi-Factor Authentication Plugin
+Kolab Multi-Factor Authentication Plugin Fork
 ========================================
 
 The plugin is designed to be a generic container for different 2nd factor 
@@ -6,11 +6,23 @@ authentication mechanisms paired with different ways to store the related
 data for Roundcube user accounts. Both drivers and storage backends are derived 
 from abstract classes which define the common interface and are configurable.
 
+Forked to support Webauthn authentication.
+
+Also added authenticator selection for High Security dialog in settings, as well
+as verifying login (password) before prompting for 2FA. This prevents easy user 
+enumeration, as sending down Webauthn "allowCredentials" before proper authentication,
+while not security critical would be definite proof of a user's existence.
+
+This Fork can not be used at the same time as the base version due to Class naming 
+conflicts. However, it can be used as a drop-in replacement, as reuse of previously
+saved TOTP/HTOP/Yubikey tokens should just work.
+
 Drivers
 -------
 
 Multiple methods for 2nd factor authentication can be enabled for the users 
-to select from. The basic implementation covers TOTP, HOTP and Yubikey methods.
+to select from. This implementation covers TOTP, HOTP and Yubikey methods form 
+the original implementation as well as Webauthn.
 
 TOTP (RFC 6238) and HOTP (RFC 4226) can be used in conjunction with freely available 
 mobile phone apps like FreeOTP (TOTP only!) or Google Authenticator. To provision 
@@ -20,6 +32,11 @@ with the mobile phone camera.
 The Yubikey driver uses the Yubico Validation Service either by using the public 
 YubiCloud API or another locally hosted verification server. The host(s) to use 
 for validation are configurable.
+
+The Webauthn driver uses FIDO/U2F compliant authenticators or passkeys. Administrators
+may select with kind of authenticators to allow. I.e. cross-platform authenticator 
+(like a Yubikey) or platform authenticator like Windows Hello or Touch ID. Aswell as
+whether user authentication (PIN entry/Biometrics) on the authenticator is required. 
 
 
 Storage Backends
@@ -38,7 +55,9 @@ user preferences of Roundcube itself.
 For an external storage option, the LDAP module can be used. This keeps the 
 authentication data separated from the Roundcube user database. See //LDAP Storage// 
 below for more information. The LDAP connection parameters are defined through the 
-`kolab_2fa_storage_config` config option.
+`kolab_2fa_storage_config` config option. **Untested with Webauthn**. Also, probably 
+not useful for Webauthn as the "Phishing proof" nature due to cryptographic domain 
+validation will probably not make them useful in other applications. 
 
 
 Installation
@@ -51,6 +70,7 @@ libraries need to be installed using Composer:
 $ composer require "endroid/qrcode" "~1.5.0" --no-update
 $ composer require "spomky-labs/otphp" "~5.0.0" --no-update
 $ composer require "enygma/yubikey" "~3.2"
+$ composer require "web-auth/webauthn-lib" "^5.2"
 ```
 
 See the `composer.json` file for the actual module names and versions.
