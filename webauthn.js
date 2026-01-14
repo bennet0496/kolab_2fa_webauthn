@@ -92,7 +92,7 @@ window.rcmail && rcmail.addEventListener('kolab2fa_style_elements', async (event
     });
 })
 
-window.rcmail && rcmail.addEventListener('init', async (event) => {
+window.rcmail && rcmail.addEventListener('init', async () => {
     if (rcmail.env.task === 'login') {
         rcmail.triggerEvent('kolab2fa_style_elements', { form: $("#login-form") });
     }

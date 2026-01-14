@@ -90,7 +90,7 @@ an additional LDAP lookup for authentication factors on every login, the LDAP dr
 can assign roles to the user record when registering authentication factors
 (see `user_roles` storage config option). With the following additions to the 
 `kolab_auth` plugin config, these roles can be used to determine whether the user 
-has multi-factor authentication enabled:
+has multifactor authentication enabled:
 
 ```
 // Disable lokkups by default:

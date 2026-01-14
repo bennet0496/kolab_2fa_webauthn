@@ -3,4 +3,12 @@
   <component name="JavaScriptSettings">
     <option name="languageLevel" value="FLOW" />
   </component>
+  <component name="PhpEntryPointsManager">
+    <entry_point>
+      <entry_point TYPE="phpMethod" FQNAME="\kolab_2fa init" />
+      <entry_point TYPE="phpClass" FQNAME="\kolab_2fa" />
+    </entry_point>
+    <pattern value="\kolab_2fa" member="init" />
+    <pattern value="\kolab_2fa" />
+  </component>
 </project>
