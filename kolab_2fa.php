@@ -254,7 +254,7 @@ class kolab_2fa extends rcube_plugin
             $input_url = new html_hiddenfield(['name' => '_url', 'id' => 'rcmloginurl', 'value' => $url]);
         }
         // create HTML table with two cols
-        $table = new html_table(['cols' => 2]);
+        $table = new html_table(['cols' => 2, 'class' => 'w-100']);
         $required = count($methods) > 1 ? null : 'required';
 
         // render input for each configured auth method
@@ -268,10 +268,13 @@ class kolab_2fa extends rcube_plugin
             $table->add('input', $input_code ? $input_code->show('') : "");
         }
 
+
         if($is_login) {
             $out = $input_task->show();
             $out .= $input_action->show();
             $out .= $input_url->show();
+        } else {
+            $out = "";
         }
         $out .= $table->show();
 

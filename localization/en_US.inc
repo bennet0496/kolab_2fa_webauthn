@@ -29,10 +29,8 @@ $labels['no'] = 'no';
 $labels['label'] = 'Name';
 $labels['qrcode'] = 'QR Code';
 $labels['showqrcode'] = 'Show QR Code';
-$labels['qrcodeexplaintotp'] = 'Download an authenticator app on your phone. Two apps which work well are <strong>FreeOTP</strong> and <strong>Google Authenticator</strong>, but any other TOTP app should also work.<br/><br/>
-Launch the app on your phone, and add a new entry for this service. When prompted, scan the QR code below to configure your mobile app.';
-$labels['qrcodeexplainhotp'] = 'Download an authenticator app on your phone. One app known to work well is <strong>Google Authenticator</strong>, but any other HOTP app should also work.<br/><br/>
-Launch the app on your phone, and add a new entry for this service. When prompted, scan the QR code below to configure your mobile app.';
+$labels['qrcodeexplaintotp'] = 'Scan the QR code below with your Authenticator App';
+$labels['qrcodeexplainhotp'] = 'Scan the QR code below with your Authenticator App';
 
 $labels['yubikeyid'] = 'Your YubiKey ID';
 $labels['yubikeyidexplainyubikey'] = 'Press your YubiKey once and submit the generated code';

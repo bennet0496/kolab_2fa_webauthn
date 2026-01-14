@@ -119,7 +119,9 @@ class Webauthn extends Base
         ];
 
         if ($this->temporary) {
-            if ($this->config["browser_script"] == 'lastest_remote') {
+            if (array_key_exists("browser_script", $this->config) &&
+                $this->config["browser_script"] == 'lastest_remote') {
+
                 $this->plugin->include_script('https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js');
             } else {
                 $this->plugin->include_script('simplewebauthn_browser_13.2.2_index.umd.min.js');

@@ -19,7 +19,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// available methods/providers. Supported methods are: 'totp','hotp','yubikey'
+// available methods/providers. Supported methods are: 'totp','hotp','yubikey','webauthn'
 $config['kolab_2fa_drivers'] = ['totp'];
 
 // backend for storing 2-factor-auth related per-user settings
