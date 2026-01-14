@@ -4,7 +4,7 @@
     "description": "Kolab 2-Factor Authentication with Webauthn",
     "homepage": "https://github.com/bennet0496/kolab_2fa_webauthn",
     "license": "AGPL-3.0-or-later",
-    "version": "4.0.2",
+    "version": "4.0.3",
     "authors": [
         {
             "name": "Thomas Bruederli",
