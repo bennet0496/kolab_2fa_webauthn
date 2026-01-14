@@ -265,8 +265,8 @@ class kolab_2fa extends rcube_plugin
 
             $input_code = $this->get_driver($method)->login_input("_{$nonce}_$method", $field_id, $attrib, $required);
 
-            $table->add('title', html::label($field_id, html::quote($this->gettext($method))));
-            $table->add('input', $input_code ? $input_code->show('') : "");
+            $table->add(['class' => 'title'], html::label($field_id, html::quote($this->gettext($method))));
+            $table->add(['class' => 'input'], $input_code ? $input_code->show('') : "");
         }
 
 
@@ -544,25 +544,25 @@ class kolab_2fa extends rcube_plugin
                 $explain_html = $rcmail->text_exists($explain_label, 'kolab_2fa') ? html::div('explain form-text', $this->gettext($explain_label)) : '';
 
                 $field_id = 'rcmk2fa' . $method . $field;
-                $table->add('title', html::label($field_id, $this->gettext($field)));
-                $table->add(null, $input->show('', ['id' => $field_id, 'name' => "_prop[$field]"]) . $explain_html);
+                $table->add(['class' => 'title'], html::label($field_id, $this->gettext($field)));
+                $table->add([], $input->show('', ['id' => $field_id, 'name' => "_prop[$field]"]) . $explain_html);
             }
 
             // add row for displaying the QR code
             if (method_exists($driver, 'get_provisioning_uri')) {
                 $gif = 'data:image/gif;base64,R0lGODlhDwAPAIAAAMDAwAAAACH5BAEAAAAALAAAAAAPAA8AQAINhI+py+0Po5y02otnAQA7';
-                $table->add('title', $this->gettext('qrcode'));
+                $table->add(['class' => 'title'], $this->gettext('qrcode'));
                 $table->add(
-                    'pl-3 pr-3',
+                    ['class' => 'pl-3 pr-3'],
                     html::div('explain form-text', $this->gettext("qrcodeexplain$method"))
                     . html::tag('img', ['src' => $gif, 'class' => 'qrcode mt-2', 'rel' => $method])
                 );
 
                 // add row for testing the factor
                 $field_id = 'rcmk2faverify' . $method;
-                $table->add('title', html::label($field_id, $this->gettext('verifycode')));
+                $table->add(['class' => 'title'], html::label($field_id, $this->gettext('verifycode')));
                 $table->add(
-                    null,
+                    [],
                     html::tag('input', ['type' => 'text', 'name' => '_verify_code', 'id' => $field_id, 'class' => 'k2fa-verify', 'size' => 20, 'required' => true]) .
                     html::div('explain form-text', $this->gettext("verifycodeexplain$method"))
                 );
