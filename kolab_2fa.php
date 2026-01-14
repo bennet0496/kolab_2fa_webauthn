@@ -109,7 +109,8 @@ class kolab_2fa extends rcube_plugin
             // process 2nd factor auth step after regular login
             $this->api->output->redirect($this->login_verify($args) + ["action" => null]);
         }
-        elseif ($args['task'] === 'settings') {
+
+        if ($args['task'] === 'settings') {
             $this->add_texts('localization/', !$this->api->output->ajax_call);
             $this->add_hook('settings_actions', [$this, 'settings_actions']);
             $this->register_action('plugin.kolab-2fa', [$this, 'settings_view']);
