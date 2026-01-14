@@ -109,7 +109,8 @@ window.rcmail && rcmail.addEventListener('init', function(evt) {
                     close: function(event, ui) {
                         form.hide().appendTo(document.body);
                         factor_dialog = null;
-                    }
+                    },
+                    height: (method === "totp" || method === "htop") ? 500 : 160
                 }
             )
             .data('method', method)
