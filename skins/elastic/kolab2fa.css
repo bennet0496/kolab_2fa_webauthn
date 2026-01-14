@@ -28,3 +28,11 @@
 #highsec-form .table td {
     border: none !important;
 }
+
+#kolab2fa-info {
+    padding: 1em;
+    background: rgb(55 190 255 / 67%);
+    border: 2px solid rgb(178, 221, 243);
+    border-radius: .3em;
+    font-weight: 600;
+}

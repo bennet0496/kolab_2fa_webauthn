@@ -114,6 +114,7 @@ class kolab_2fa extends rcube_plugin
                 $this->login_step();
             } elseif ($lookup['enforce'] && $args['action'] !== 'plugin.kolab-2fa' && $args['task'] !== 'settings') {
                 // redirect to settings
+                $_SESSION['kolab_2fa_setup_forced'] = true;
                 $this->api->output->redirect(['task' => 'settings', 'action' => 'plugin.kolab-2fa']);
             }
         }
@@ -433,6 +434,7 @@ class kolab_2fa extends rcube_plugin
         $this->register_handler('plugin.settingsform', [$this, 'settings_form']);
         $this->register_handler('plugin.settingslist', [$this, 'settings_list']);
         $this->register_handler('plugin.factoradder', [$this, 'settings_factoradder']);
+        $this->register_handler('plugin.factorinfo', [$this, 'settings_factorinfo']);
         $this->register_handler('plugin.highsecuritydialogform', [$this, 'settings_highsecuritydialog']);
 
         $this->include_script('kolab2fa.js');
@@ -460,6 +462,23 @@ class kolab_2fa extends rcube_plugin
         }
 
         return $select->show();
+    }
+
+    /**
+     * Render an info box if the user was force redirected to set up a secound factor
+     * @param $attrib
+     * @return string
+     */
+    public function settings_factorinfo($attrib): string
+    {
+        $attrib['id'] = 'kolab2fa-info';
+
+        $force = $_SESSION['kolab_2fa_setup_forced'];
+        unset($_SESSION['kolab_2fa_setup_forced']);
+
+        return $force ?
+            html::p($attrib, $this->gettext('factorforcedinfo')) :
+            "";
     }
 
     /**
@@ -771,6 +790,7 @@ class kolab_2fa extends rcube_plugin
 
         if (!empty($factors) && !empty($nonce) && !$expired) {
             // TODO: check signature
+            // TODO: which signature??
 
             // try to verify each configured factor
             foreach ($factors as $factor) {
