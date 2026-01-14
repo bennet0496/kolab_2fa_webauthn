@@ -473,10 +473,7 @@ class kolab_2fa extends rcube_plugin
     {
         $attrib['id'] = 'kolab2fa-info';
 
-        $force = $_SESSION['kolab_2fa_setup_forced'];
-        unset($_SESSION['kolab_2fa_setup_forced']);
-
-        return $force ?
+        return $_SESSION['kolab_2fa_setup_forced'] ?
             html::p($attrib, $this->gettext('factorforcedinfo')) :
             "";
     }
@@ -712,6 +709,12 @@ class kolab_2fa extends rcube_plugin
         }
 
         if ($success) {
+            if ($_SESSION['kolab_2fa_setup_forced']) {
+                // set up factor after being forced to do so
+                // we therefore need to verify the session and delete the forced flag
+                $_SESSION['kolab_2fa_login_verified'] = true;
+                unset($_SESSION['kolab_2fa_setup_forced']);
+            }
             $this->api->output->show_message($data === false ? $this->gettext('factorremovesuccess') : $this->gettext('factorsavesuccess'), 'confirmation');
             $this->api->output->command('plugin.save_success', [
                     'method' => $method,
