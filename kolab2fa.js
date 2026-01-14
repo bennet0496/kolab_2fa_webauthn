@@ -170,7 +170,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
             if (elem.name.indexOf('_prop') === 0) {
                 console.log("prop")
                 const k = elem.name.match(/\[([a-z0-9_.-]+)]$/i); //? RegExp.$1 : null;
-                if (k?.length() > 1) {
+                if (k?.length > 1) {
                     console.log(k)
                     data[k[1]] = elem.tagName === 'SELECT' ? $('option:selected', elem).val() : $(elem).val();
                 }
