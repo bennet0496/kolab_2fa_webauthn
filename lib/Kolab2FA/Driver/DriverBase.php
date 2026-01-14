@@ -24,30 +24,33 @@
 namespace Kolab2FA\Driver;
 
 use html_inputfield;
+use Kolab2FA\Storage\StorageBase;
+use kolab_2fa;
+use rcmail;
 
 /**
  * Kolab 2-Factor-Authentication Driver base class
  */
-abstract class Base
+abstract class DriverBase
 {
-    public $method;
-    public $id;
-    public $storage;
+    public string $method;
+    public mixed $id;
+    public StorageBase $storage;
 
 
     /**
-     * @var $plugin \kolab_2fa
+     * @var $plugin kolab_2fa
      */
-    protected $plugin;
-    protected $config          = [];
-    protected $config_keys     = [];
-    protected $props           = [];
-    protected $user_props      = [];
-    protected $pending_changes = false;
-    protected $temporary       = false;
-    protected $allowed_props   = ['username'];
+    protected kolab_2fa $plugin;
+    protected array $config          = [];
+    protected array $config_keys     = [];
+    protected array $props           = [];
+    protected array $user_props      = [];
+    protected bool $pending_changes = false;
+    protected bool $temporary       = false;
+    protected array $allowed_props   = ['username'];
 
-    public $user_settings = [
+    public array $user_settings = [
         'active' => [
             'type'     => 'boolean',
             'editable' => false,
@@ -71,6 +74,7 @@ abstract class Base
 
     /**
      * Static factory method
+     * @throws Exception
      */
     public static function factory($storage, $id, $config, $plugin)
     {
@@ -106,12 +110,10 @@ abstract class Base
 
         if (!empty($id) && $id != $this->method) {
             $this->id = $id;
-            if ($this->storage) {
-                $this->user_props = (array) $this->storage->read($this->id);
-                foreach ($this->config_keys as $key) {
-                    if (isset($this->user_props[$key])) {
-                        $config[$key] = $this->user_props[$key];
-                    }
+            $this->user_props = (array) $this->storage->read($this->id);
+            foreach ($this->config_keys as $key) {
+                if (isset($this->user_props[$key])) {
+                    $config[$key] = $this->user_props[$key];
                 }
             }
         } else { // generate random ID
@@ -125,7 +127,7 @@ abstract class Base
     /**
      * Initialize the driver with the given config options
      */
-    protected function init($config)
+    protected function init($config): void
     {
         if (is_array($config)) {
             $this->config = array_merge($this->config, $config);
@@ -136,11 +138,11 @@ abstract class Base
      * Verify the submitted authentication code
      *
      * @param string $code      The 2nd authentication factor to verify
-     * @param int    $timestamp Timestamp of authentication process (window start)
+     * @param int|null $timestamp Timestamp of authentication process (window start)
      *
      * @return bool True if valid, false otherwise
      */
-    abstract public function verify($code, $timestamp = null);
+    abstract public function verify(string $code, ?int $timestamp = null): bool;
 
     /**
      * Implement this method if the driver can be provisioned via QR code
@@ -150,7 +152,7 @@ abstract class Base
     /**
      * Getter for user-visible properties
      */
-    public function props($force = false)
+    public function props($force = false): array
     {
         $data = [];
 
@@ -194,8 +196,9 @@ abstract class Base
      *
      * A default of 32 characters results in 160bit security which is recommended by
      * https://datatracker.ietf.org/doc/html/rfc6238
+     * @noinspection PhpUnused
      */
-    public function generate_secret($length = 32)
+    public function generate_secret($length = 32): string
     {
         // Base32 characters
         $chars = [
@@ -215,11 +218,12 @@ abstract class Base
 
     /**
      * Generate the default label based on the method
+     * @noinspection PhpUnused
      */
-    public function default_label()
+    public function default_label(): string
     {
         if (class_exists('\\rcmail', false)) {
-            return \rcmail::get_instance()->gettext($this->method, 'kolab_2fa');
+            return rcmail::get_instance()->gettext($this->method, 'kolab_2fa');
         }
 
         return strtoupper($this->method);
@@ -261,7 +265,7 @@ abstract class Base
     /**
      * Setter for restricted access to driver properties
      */
-    public function set($key, $value, $persistent = true)
+    public function set($key, $value, $persistent = true): bool
     {
         // store as per-user property
         if (isset($this->user_settings[$key])) {
@@ -284,13 +288,13 @@ abstract class Base
     /**
      * Commit changes to storage
      */
-    public function commit()
+    public function commit(): bool
     {
-        if (!empty($this->user_props) && $this->storage && $this->pending_changes) {
+        if (!empty($this->user_props) && $this->pending_changes) {
             $props = $this->user_props;
 
             // Remamber the driver config too. It will be used to verify the code.
-            // The configured one may be different than the one used on code creation.
+            // The configured one may be different from the one used on code creation.
             foreach ($this->config_keys as $key) {
                 if (isset($this->config[$key])) {
                     $props[$key] = $this->config[$key];
@@ -311,14 +315,10 @@ abstract class Base
      */
     public function clear()
     {
-        if ($this->storage) {
-            return $this->storage->remove($this->id);
-        }
-
-        return false;
+        return $this->storage->remove($this->id);
     }
 
-    public function login_input(string $name, string $field_id, array $attrib, ?bool $required = false) : ?\html_inputfield
+    public function login_input(string $name, string $field_id, array $attrib, ?bool $required = false) : ?html_inputfield
     {
         return new html_inputfield([
                 'name'         => $name,
@@ -333,7 +333,7 @@ abstract class Base
     /**
      * Checks that a string contains a semicolon
      */
-    protected function hasSemicolon($value)
+    protected function hasSemicolon($value): bool
     {
         return preg_match('/(:|%3A)/i', (string) $value) > 0;
     }
@@ -343,7 +343,7 @@ abstract class Base
      */
     protected function get_user_prop($key)
     {
-        if (!isset($this->user_props[$key]) && $this->storage && !$this->pending_changes && !$this->temporary) {
+        if (!isset($this->user_props[$key]) && !$this->pending_changes && !$this->temporary) {
             $this->user_props = (array)$this->storage->read($this->id);
         }
 
@@ -353,7 +353,7 @@ abstract class Base
     /**
      * Setter for per-user properties for this method
      */
-    protected function set_user_prop($key, $value)
+    protected function set_user_prop($key, $value): bool
     {
         $this->pending_changes |= (($this->user_props[$key] ?? null) !== $value);
         $this->user_props[$key] = $value;

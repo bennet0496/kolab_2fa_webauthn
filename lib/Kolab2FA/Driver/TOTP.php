@@ -23,23 +23,24 @@
 
 namespace Kolab2FA\Driver;
 
-class TOTP extends Base
+class TOTP extends DriverBase
 {
-    public $method = 'totp';
+    public string $method = 'totp';
 
-    protected $config = [
+    protected array $config = [
         'digits'   => 6,
         'interval' => 30,
         'digest'   => 'sha1',
     ];
 
-    protected $config_keys = ['digits', 'digest'];
-    protected $backend;
+    protected array $config_keys = ['digits', 'digest'];
+    protected mixed $backend;
 
     /**
      *
+     * @throws \Exception
      */
-    public function init($config)
+    public function init($config): void
     {
         parent::init($config);
 
@@ -83,7 +84,7 @@ class TOTP extends Base
     /**
      *
      */
-    public function verify($code, $timestamp = null)
+    public function verify(string $code, int $timestamp = null): bool
     {
         // get my secret from the user storage
         $secret = $this->get('secret');

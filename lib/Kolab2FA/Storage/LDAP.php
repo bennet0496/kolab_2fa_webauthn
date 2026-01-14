@@ -24,19 +24,21 @@
 namespace Kolab2FA\Storage;
 
 use Net_LDAP3;
-use Kolab2FA\Log\Logger;
 
-class LDAP extends Base
+class LDAP extends StorageBase
 {
-    public $userdn;
+    public string $userdn;
 
-    private $cache = [];
-    private $ldapcache = [];
-    private $conn;
-    private $ready = false;
+    private array $cache = [];
+    private array $ldapcache = [];
+    private Net_LDAP3 $conn;
+    private bool $ready = false;
 
 
-    public function init(array $config)
+    /**
+     * @throws Exception
+     */
+    public function init(array $config): void
     {
         parent::init($config);
 
@@ -46,7 +48,7 @@ class LDAP extends Base
         $this->conn->connect();
 
         $bind_pass = $this->config['bind_pass'];
-        $bind_user = $this->config['bind_user'];
+        //$bind_user = $this->config['bind_user'];
         $bind_dn   = $this->config['bind_dn'];
 
         $this->ready = $this->conn->bind($bind_dn, $bind_pass);
@@ -59,7 +61,7 @@ class LDAP extends Base
     /**
      * List/set methods activated for this user
      */
-    public function enumerate($active = true)
+    public function enumerate($active = true): array
     {
         $filter  = $this->parse_vars($this->config['filter'], '*');
         $base_dn = $this->parse_vars($this->config['base_dn'], '*');
@@ -95,7 +97,7 @@ class LDAP extends Base
     /**
      * Save data for the given key
      */
-    public function write($key, $value)
+    public function write($key, $value): bool
     {
         $success = false;
         $ldap_attrs = [];
@@ -106,7 +108,7 @@ class LDAP extends Base
 
             foreach ($value as $k => $val) {
                 if ($attr = $this->config['fieldmap'][$k]) {
-                    $ldap_attrs[$attr] = $this->value_mapping($k, $val, false);
+                    $ldap_attrs[$attr] = $this->value_mapping($k, $val);
                 }
             }
         } else {
@@ -158,7 +160,7 @@ class LDAP extends Base
     /**
      * Remove the data stored for the given key
      */
-    public function remove($key)
+    public function remove($key): bool
     {
         if ($this->ready) {
             $entry_dn = $this->get_entry_dn($this->username, $key);
@@ -178,7 +180,7 @@ class LDAP extends Base
     /**
      * Set username to store data for
      */
-    public function set_username($username)
+    public function set_username($username): void
     {
         parent::set_username($username);
 
@@ -190,16 +192,16 @@ class LDAP extends Base
     /**
      *
      */
-    protected function set_user_roles()
+    protected function set_user_roles(): bool
     {
         if (!$this->ready || !$this->userdn || empty($this->config['user_roles'])) {
             return false;
         }
 
         $auth_roles = [];
-        foreach ($this->enumerate(true) as $id) {
+        foreach ($this->enumerate() as $id) {
             foreach ($this->config['user_roles'] as $prefix => $role) {
-                if (strpos($id, $prefix) === 0) {
+                if (str_starts_with($id, $prefix)) {
                     $auth_roles[] = $role;
                 }
             }
@@ -242,7 +244,7 @@ class LDAP extends Base
     /**
      * Compose a full DN for the given record identifier
      */
-    protected function get_entry_dn($user, $key)
+    protected function get_entry_dn($user, $key): string
     {
         $base_dn = $this->parse_vars($this->config['base_dn'], $key);
         return sprintf('%s=%s,%s', $this->config['rdn'], Net_LDAP3::quote_string($key, true), $base_dn);
@@ -308,7 +310,7 @@ class LDAP extends Base
     /**
      * Prepares filter query for LDAP search
      */
-    protected function parse_vars($str, $key)
+    protected function parse_vars($str, $key): string
     {
         $user = $this->username;
 
@@ -331,7 +333,7 @@ class LDAP extends Base
         // map key to objectclass
         if (is_array($this->config['classmap'])) {
             foreach ($this->config['classmap'] as $k => $c) {
-                if (strpos($key, $k) === 0) {
+                if (str_starts_with($key, $k)) {
                     $class = $c;
                     break;
                 }

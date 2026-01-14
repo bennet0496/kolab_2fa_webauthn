@@ -24,24 +24,26 @@
 
 namespace Kolab2FA\Log;
 
-use rcube;
 
 class Syslog implements Logger
 {
-    protected $name = 'Kolab2FA';
-    protected $level = LOG_INFO;
+    protected string $name = 'Kolab2FA';
+    protected int $level = LOG_INFO;
 
-    public function set_name($name)
+    /** @noinspection PhpUnused */
+    public function set_name($name): void
     {
         $this->name = $name;
     }
 
-    public function set_level($level)
+    /** @noinspection PhpUnused */
+    public function set_level($level): void
     {
         $this->level = $level;
     }
 
-    public function log($level, $message)
+    /** @noinspection PhpUnused */
+    public function log($level, $message): void
     {
         if ($level >= $this->level) {
             if (!is_string($message)) {

@@ -138,7 +138,7 @@ $config['kolab_2fa_webauthn'] = array(
     // @see https://webauthn-doc.spomky-labs.com/v5.2/prerequisites/the-relying-party#relying-party-icon
     'icon' => null,
     'authenticator_selection_criteria' => [
-        // authenticator_attachment: This optional object helps relying parties make further restrictions
+        // authenticator_attachment: This optional object helps relying-parties make further restrictions
         // on the type of authenticators allowed for registration. In this example we are indicating we
         // want to register a cross-platform authenticator (like a Yubikey) instead of a platform
         // authenticator like Windows Hello or Touch ID. Read the spec.
@@ -154,7 +154,7 @@ $config['kolab_2fa_webauthn'] = array(
         //
         // Valid Options: required, preferred, discouraged
         'user_verification' => 'preferred',
-        // resident_key: Specifies the extent to which the Relying Party desires to create a client-side
+        // resident_key: Specifies the extent to which the Relying-Party desires to create a client-side
         // discoverable credential. For historical reasons the naming retains the deprecated “resident”
         // terminology. The value SHOULD be a member of ResidentKeyRequirement but client platforms MUST
         // ignore unknown values, treating an unknown value as if the member does not exist. If no value

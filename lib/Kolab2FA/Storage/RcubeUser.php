@@ -26,17 +26,17 @@ namespace Kolab2FA\Storage;
 use rcmail;
 use rcube_user;
 
-class RcubeUser extends Base
+class RcubeUser extends StorageBase
 {
     // sefault config
-    protected $config = [
+    protected array $config = [
         'keymap' => [],
     ];
 
-    private $cache = [];
-    private $user;
+    private array $cache = [];
+    private ?rcube_user $user;
 
-    public function init(array $config)
+    public function init(array $config): void
     {
         parent::init($config);
 
@@ -47,7 +47,7 @@ class RcubeUser extends Base
     /**
      * List/set methods activated for this user
      */
-    public function enumerate()
+    public function enumerate(): array
     {
         if ($factors = $this->get_factors()) {
             return array_keys(array_filter($factors, function ($prop) {
@@ -65,7 +65,7 @@ class RcubeUser extends Base
     {
         if (!array_key_exists($key, $this->cache)) {
             $factors = $this->get_factors();
-            $this->log(LOG_DEBUG, "RcubeUser::read({$key})");
+            $this->log(LOG_DEBUG, "RcubeUser::read($key)");
             $this->cache[$key] = $factors[$key] ?? null;
         }
 
@@ -75,9 +75,9 @@ class RcubeUser extends Base
     /**
      * Save data for the given key
      */
-    public function write($key, $value)
+    public function write($key, $value): bool
     {
-        $this->log(LOG_DEBUG, "RcubeUser::write({$key}) " . @json_encode($value));
+        $this->log(LOG_DEBUG, "RcubeUser::write($key) " . @json_encode($value));
 
         if ($user = $this->get_user($this->username)) {
             $this->cache[$key] = $value;
@@ -127,7 +127,7 @@ class RcubeUser extends Base
     /**
      * Remove the data stored for the given key
      */
-    public function remove($key)
+    public function remove($key): bool
     {
         return $this->write($key, null);
     }
@@ -135,7 +135,7 @@ class RcubeUser extends Base
     /**
      * Set username to store data for
      */
-    public function set_username($username)
+    public function set_username($username): void
     {
         parent::set_username($username);
 
@@ -147,7 +147,7 @@ class RcubeUser extends Base
     /**
      * Helper method to get a rcube_user instance for storing prefs
      */
-    private function get_user($username)
+    private function get_user($username): ?rcube_user
     {
         // use global instance if we have a valid Roundcube session
         $rcmail = rcmail::get_instance();
@@ -169,7 +169,7 @@ class RcubeUser extends Base
     /**
      *
      */
-    private function get_factors()
+    private function get_factors(): ?array
     {
         if ($user = $this->get_user($this->username)) {
             $prefs = $user->get_prefs();

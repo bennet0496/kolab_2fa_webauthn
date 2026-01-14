@@ -23,23 +23,24 @@
 
 namespace Kolab2FA\Driver;
 
-class HOTP extends Base
+class HOTP extends DriverBase
 {
-    public $method = 'hotp';
+    public string $method = 'hotp';
 
-    protected $config = [
+    protected array $config = [
         'digits'   => 6,
         'window'   => 4,
         'digest'   => 'sha1',
     ];
 
-    protected $config_keys = ['digits', 'digest'];
-    protected $backend;
+    protected array $config_keys = ['digits', 'digest'];
+    protected mixed $backend;
 
     /**
      *
+     * @throws \Exception
      */
-    public function init($config)
+    public function init($config): void
     {
         parent::init($config);
 
@@ -85,7 +86,7 @@ class HOTP extends Base
     /**
      *
      */
-    public function verify($code, $timestamp = null)
+    public function verify(string $code, int $timestamp = null): bool
     {
         // get my secret from the user storage
         $secret  = $this->get('secret');
@@ -103,7 +104,7 @@ class HOTP extends Base
             // store incremented counter value
             $this->set('counter', $this->backend->getCounter());
             $this->commit();
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $pass = false;
         }
 
@@ -134,8 +135,9 @@ class HOTP extends Base
 
     /**
      * Generate a random counter value
+     * @noinspection PhpUnused
      */
-    public function random_counter()
+    public function random_counter(): int
     {
         return mt_rand(1, 999);
     }

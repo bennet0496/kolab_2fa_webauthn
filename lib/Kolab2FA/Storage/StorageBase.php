@@ -25,15 +25,16 @@ namespace Kolab2FA\Storage;
 
 use Kolab2FA\Log;
 
-abstract class Base
+abstract class StorageBase
 {
-    public $username = null;
+    public ?string $username = null;
 
-    protected $config = [];
-    protected $logger;
+    protected array $config = [];
+    protected Log\Logger $logger;
 
     /**
      *
+     * @throws Exception
      */
     public static function factory($backend, $config)
     {
@@ -53,6 +54,7 @@ abstract class Base
 
     /**
      * Default constructor
+     * @noinspection PhpUnused
      */
     public function __construct($config = null)
     {
@@ -64,7 +66,7 @@ abstract class Base
     /**
      * Initialize the driver with the given config options
      */
-    public function init(array $config)
+    public function init(array $config): void
     {
         $this->config = array_merge($this->config, $config);
 
@@ -75,7 +77,7 @@ abstract class Base
     /**
      *
      */
-    public function set_logger(Log\Logger $logger)
+    public function set_logger(Log\Logger $logger): void
     {
         $this->logger = $logger;
 
@@ -89,7 +91,7 @@ abstract class Base
     /**
      * Set username to store data for
      */
-    public function set_username($username)
+    public function set_username($username): void
     {
         $this->username = $username;
     }
@@ -97,11 +99,9 @@ abstract class Base
     /**
      * Send messager to the logging system
      */
-    protected function log($level, $message)
+    protected function log($level, $message): void
     {
-        if ($this->logger) {
-            $this->logger->log($level, $message);
-        }
+        $this->logger->log($level, $message);
     }
 
     /**

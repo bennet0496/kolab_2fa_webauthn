@@ -23,16 +23,18 @@
 
 namespace Kolab2FA\Driver;
 
-class Yubikey extends Base
-{
-    public $method = 'yubikey';
+use Yubikey\Validate;
 
-    protected $backend;
+class Yubikey extends DriverBase
+{
+    public string $method = 'yubikey';
+
+    protected mixed $backend;
 
     /**
      *
      */
-    public function init($config)
+    public function init($config): void
     {
         parent::init($config);
 
@@ -45,7 +47,7 @@ class Yubikey extends Base
         ];
 
         // initialize validator
-        $this->backend = new \Yubikey\Validate($this->config['apikey'], $this->config['clientid']);
+        $this->backend = new Validate($this->config['apikey'], $this->config['clientid']);
 
         // set configured validation hosts
         if (!empty($this->config['hosts'])) {
@@ -60,7 +62,7 @@ class Yubikey extends Base
     /**
      *
      */
-    public function verify($code, $timestamp = null)
+    public function verify(string $code, int $timestamp = null): bool
     {
         error_log("Yubikey::verify() was called");
         // get my secret from the user storage
@@ -72,11 +74,11 @@ class Yubikey extends Base
         }
 
         // check key prefix with associated Yubikey ID
-        if (strpos($code, $keyid) === 0) {
+        if (str_starts_with($code, $keyid)) {
             try {
                 $response = $this->backend->check($code);
                 $pass     = $response->success() === true;
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 // TODO: log exception
             }
         }
@@ -87,7 +89,7 @@ class Yubikey extends Base
     /**
      * @override
      */
-    public function set($key, $value, $persistent = true)
+    public function set($key, $value, $persistent = true): bool
     {
         if ($key == 'yubikeyid' && strlen($value) > 12) {
             // verify the submitted code
@@ -97,7 +99,7 @@ class Yubikey extends Base
                     // TODO: report error
                     return false;
                 }
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 return false;
             }
 
@@ -115,7 +117,7 @@ class Yubikey extends Base
     /**
      * @override
      */
-    protected function set_user_prop($key, $value)
+    protected function set_user_prop($key, $value): bool
     {
         // set created timestamp
         if ($key !== 'created' && !isset($this->created)) {

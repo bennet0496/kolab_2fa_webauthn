@@ -191,7 +191,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
 
             // find an active factor
             $.each(rcmail.env.kolab_2fa_factors, function(id, prop) {
-                if (prop.active && !method || method == exclude) {
+                if (prop.active && !method || method === exclude) {
                     method = id;
                     name = prop.label || prop.name;
                     if (!exclude || id !== exclude) {

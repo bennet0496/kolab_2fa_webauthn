@@ -27,6 +27,7 @@ interface Logger
 {
     /**
      * Setter for the log name
+     * @noinspection PhpUnused
      */
     public function set_name($name);
 

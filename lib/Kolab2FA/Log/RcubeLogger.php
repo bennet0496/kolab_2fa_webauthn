@@ -24,12 +24,13 @@
 
 namespace Kolab2FA\Log;
 
+use Exception;
 use rcube;
 
 class RcubeLogger implements Logger
 {
-    protected $name = '2fa';
-    protected $level = LOG_INFO;
+    protected string $name = '2fa';
+    protected int $level = LOG_INFO;
 
     public function __construct($name = null)
     {
@@ -38,17 +39,20 @@ class RcubeLogger implements Logger
         }
     }
 
-    public function set_name($name)
+    public function set_name($name): void
     {
         $this->name = $name;
     }
 
-    public function set_level($level)
+    public function set_level($level): void
     {
         $this->level = $level;
     }
 
-    public function log($level, $message)
+    /**
+     * @throws Exception
+     */
+    public function log($level, $message): void
     {
         if (!is_string($message)) {
             $message = var_export($message, true);
@@ -72,7 +76,7 @@ class RcubeLogger implements Logger
                     'code' => 600,
                     'type' => 'php',
                     'message' => $message,
-                ], true, false);
+                ], true);
                 break;
         }
     }
