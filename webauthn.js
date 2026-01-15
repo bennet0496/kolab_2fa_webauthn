@@ -90,7 +90,7 @@ window.rcmail && rcmail.addEventListener('kolab2fa_style_elements', async (event
             // Pass the options to the authenticator and wait for a response
             asseResp = await startAuthentication({ optionsJSON });
         } catch (error) {
-            console.log(error);
+            console.log(error, error.name);
 
             const span = document.createElement("span");
             span.style.textAlign = "left";

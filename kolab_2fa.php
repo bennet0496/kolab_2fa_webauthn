@@ -110,7 +110,7 @@ class kolab_2fa extends rcube_plugin
                 $_SESSION['kolab_2fa_nonce'] = bin2hex(openssl_random_pseudo_bytes(32));
 
                 // 4. render to 2nd auth step
-                $this->add_texts('localization/');
+                $this->add_texts('localization/', true);
                 $this->login_step();
             } elseif ($lookup['enforce'] && !(str_starts_with($args['action'], 'plugin.kolab-2fa') && $args['task'] == 'settings')) {
                 // redirect to settings
