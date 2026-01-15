@@ -77,8 +77,8 @@ window.rcmail && rcmail.addEventListener('kolab2fa_style_elements', async (event
     button.type = "button";
     button.className = "kolab2facode button mainaction btn btn-primary form-control";
     button.id = "rcmlogin2fawebauthnbutton";
-    button.attributes["aria-auth-options"] = authopt;
-    button.value = value;
+    button.setAttribute("aria-auth-options", authopt);
+    button.innerText = value;
 
     button.addEventListener("click", async (cevent) => {
         const aao = cevent.target.attributes.getNamedItem("aria-auth-options")?.value;
@@ -97,7 +97,13 @@ window.rcmail && rcmail.addEventListener('kolab2fa_style_elements', async (event
             span.innerText = error;
 
             const again = document.createElement("a");
-            again.innerText = "try again";
+            again.innerText = rcmail.get_label('again', 'kolab_2fa');
+            again.href = "#"
+            again.style = {
+                marginTop: "1.3rem",
+                textDecoration: "underline",
+                cursor: "pointer"
+            }
             again.addEventListener("click", () => window.location.reload());
 
             document.querySelector("#login-form").replaceChildren(span, document.createElement("br"), again);
@@ -114,7 +120,7 @@ window.rcmail && rcmail.addEventListener('kolab2fa_style_elements', async (event
     input.name = name;
     input.id = "rcmlogin2fawebauthn";
 
-    node.replaceWith(button, input);
+    node.parentElement.replaceChildren(button, input);
 
     if (!document.querySelector("#rcmlogin2fawebauthn").parentElement.classList.replace("input-group", "w-100")){
         document.querySelector("#rcmlogin2fawebauthn").parentElement.classList.add("w-100");

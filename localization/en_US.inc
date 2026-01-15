@@ -25,6 +25,7 @@ $labels['webauthn'] = 'Security Key';
 $labels['or'] = 'or';
 $labels['yes'] = 'yes';
 $labels['no'] = 'no';
+$labels['again'] = 'try again';
 
 $labels['label'] = 'Name';
 $labels['qrcode'] = 'QR Code';
