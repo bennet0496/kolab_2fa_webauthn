@@ -38,7 +38,18 @@ window.rcmail && rcmail.addEventListener('kolab2fa_render_data', async (event) =
             // Pass the options to the authenticator and wait for a response
             attResp = await startRegistration({optionsJSON});
         } catch (error) {
-            console.log(error)
+            console.log(error);
+
+            const span = document.createElement("span");
+            span.style.textAlign = "left";
+            span.innerText = error;
+
+            document.querySelector(".ui-dialog-content")
+                .replaceChildren(span);
+
+            document.querySelector(".mainaction").remove();
+
+            return;
         }
 
         console.log(attResp);
@@ -54,19 +65,24 @@ window.rcmail && rcmail.addEventListener('kolab2fa_render_data', async (event) =
 });
 
 window.rcmail && rcmail.addEventListener('kolab2fa_style_elements', async (event) => {
-    let name = $('#rcmlogin2fawebauthn').attr('name');
-    let value = $('#rcmlogin2fawebauthn').attr('placeholder');
-    let authopt = $('#rcmlogin2fawebauthn').attr('aria-auth-options');
-    console.log(atob(authopt));
-    $('#rcmlogin2fawebauthn').parent().html(
-        `<button type="button"  
-                class="kolab2facode button mainaction btn btn-primary form-control" id="rcmlogin2fawebauthnbutton" 
-                aria-auth-options="${authopt}">${value}</button>
-                <input type="hidden" name="${name}" id="rcmlogin2fawebauthn"/>`)
-        .removeClass('input-group').addClass("w-100");
+    const node = document.querySelector("#rcmlogin2fawebauthn");
+    if (!node) return;
 
-    $('#rcmlogin2fawebauthnbutton').click(async (cevent) => {
-        const optionsJSON = JSON.parse(atob($(cevent.target).attr('aria-auth-options')));
+    const name = node.attributes.getNamedItem("name")?.value;
+    const value = node.attributes.getNamedItem("placeholder")?.value;
+    const authopt = node.attributes.getNamedItem("aria-auth-options")?.value;
+    console.log(atob(authopt));
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "kolab2facode button mainaction btn btn-primary form-control";
+    button.id = "rcmlogin2fawebauthnbutton";
+    button.attributes["aria-auth-options"] = authopt;
+    button.value = value;
+
+    button.addEventListener("click", async (cevent) => {
+        const aao = cevent.target.attributes.getNamedItem("aria-auth-options")?.value;
+        const optionsJSON = JSON.parse(atob(aao));
         console.log(optionsJSON);
 
         let asseResp;
@@ -75,21 +91,34 @@ window.rcmail && rcmail.addEventListener('kolab2fa_style_elements', async (event
             asseResp = await startAuthentication({ optionsJSON });
         } catch (error) {
             console.log(error);
-            $('#login-form').html(
-                `<span style="text-align: left;">${error}</span><br/><a onclick="window.location.reload()" href="#">try again</a>`)
+
+            const span = document.createElement("span");
+            span.style.textAlign = "left";
+            span.innerText = error;
+
+            const again = document.createElement("a");
+            again.innerText = "try again";
+            again.addEventListener("click", () => window.location.reload());
+
+            document.querySelector("#login-form").replaceChildren(span, document.createElement("br"), again);
             return;
         }
-
         console.log(asseResp, event.form);
+
         document.querySelector('#rcmlogin2fawebauthn').value = JSON.stringify(asseResp);
-
         document.querySelector('#rcmlogin2fawebauthn').form.requestSubmit();
-
-        // if (event.form.length) {
-        //     document.querySelector("#" + event.form.get(0).id).submit();
-        // }
-
     });
+
+    const input = document.createElement("input")
+    input.type = "hidden";
+    input.name = name;
+    input.id = "rcmlogin2fawebauthn";
+
+    node.replaceWith(button, input);
+
+    if (!document.querySelector("#rcmlogin2fawebauthn").parentElement.classList.replace("input-group", "w-100")){
+        document.querySelector("#rcmlogin2fawebauthn").parentElement.classList.add("w-100");
+    }
 })
 
 window.rcmail && rcmail.addEventListener('init', async () => {

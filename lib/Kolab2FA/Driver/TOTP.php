@@ -23,6 +23,8 @@
 
 namespace Kolab2FA\Driver;
 
+use OTPHP\TOTPInterface;
+
 class TOTP extends DriverBase
 {
     public string $method = 'totp';
@@ -34,7 +36,7 @@ class TOTP extends DriverBase
     ];
 
     protected array $config_keys = ['digits', 'digest'];
-    protected mixed $backend;
+    protected TOTPInterface $backend;
 
     /**
      *

@@ -215,7 +215,8 @@ window.rcmail && rcmail.addEventListener('init', function() {
                         {
                             text: rcmail.gettext('enterhighsecurity', 'kolab_2fa'),
                             click: function(e) {
-                                $(e.target).closest('#highsec-form').requestSubmit();
+                                console.log("submit highsec form from button:", e, e.target);
+                                document.querySelector('#highsec-form').requestSubmit();
                             },
                             'class': 'mainaction save'
                         },
@@ -224,13 +225,14 @@ window.rcmail && rcmail.addEventListener('init', function() {
                             'class': 'cancel',
                             click: function() {
                                 highsec_dialog.dialog('close');
+                                window.location.reload();
                             }
                         }
                     ],
                     {
                         open: function(event, ui) {
                             // submit code on <Enter>
-                            console.log(event,ui);
+                            console.log("opening highsec form ", event, ui);
 
                             $(event.target).find('form table tr').each(function() {
                                 const input = $('input,select', this),
@@ -248,7 +250,8 @@ window.rcmail && rcmail.addEventListener('init', function() {
                                     .attr('placeholder', label.text())
                                     .keypress(function(e) {
                                         if (e.which === 13) {
-                                            $(e.target).closest('#highsec-form').requestSubmit();
+                                            console.log("submit highsec form from enter-key", e, e.target);
+                                            document.querySelector('#highsec-form').requestSubmit();
                                         }
                                     })
                                     .before($('<span class="input-group-prepend">').append(icon))
@@ -340,7 +343,8 @@ window.rcmail && rcmail.addEventListener('init', function() {
             factor_dialog.dialog('close');
         }
 
-        render();
+        // render();
+        window.location.reload();
     });
 
     // callback for verify action
