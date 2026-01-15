@@ -59,6 +59,6 @@ $labels['factorsaveerror'] = 'Speichern der Authentifizierungsfaktoreinstellunge
 $labels['codeverificationpassed'] = 'Codeüberprüfung für $method erfolgreich';
 $labels['codeverificationfailed'] = 'Codeüberprüfung für $method fehlgeschalgen';
 
-$labels['highsecurityrequired'] = 'Zugang zu Hochsicherheitsbereich – Überprüfung erforderlich';
-$labels['highsecuritydialog'] = 'Der Hochsicherheitsmodus schützt Ihr Konto vor Sicherheitsbedrohungen wie Sitzungsdiebstahl oder unbefugten Zugriffen auf Ihre Daten, während Sie nicht anwesend sind. Um den Hochsicherheitsmodus zu aktivieren, bestätigen Sie Ihre Anmeldedaten mit dem zusätzlichen Authentifizierungsfaktor:';
+$labels['highsecurityrequired'] = 'Zusätzliche Überprüfung erforderlich';
+$labels['highsecuritydialog'] = 'Um dein Konto vor Sicherheitsbedrohungen wie Sitzungsdiebstahl oder unbefugtem Zugriff auf deine Daten zu schützen, müsst Du Deine Anmeldedaten mit einem zusätzlichen Authentifizierungsfaktor bestätigen:';
 $labels['enterhighsecurity'] = 'Bestätigen';
