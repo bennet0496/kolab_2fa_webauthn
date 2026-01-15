@@ -358,6 +358,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
                 func();
             }
 
+            console.log("closing high sec form")
             highsec_dialog.dialog('destroy');
             rcmail.env.session_secured = time();
         }
