@@ -189,6 +189,7 @@ class kolab_2fa extends rcube_plugin
         }
 
         if (!$_SESSION['kolab_2fa_login_verified']) {
+            $this->log_2fa($used_factor, $username, true, 1);
             $rcmail->output->show_message('loginfailed', 'warning');
             $rcmail->kill_session();
 //            $rcmail->output->redirect(['task' => 'login']);

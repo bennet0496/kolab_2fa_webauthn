@@ -95,7 +95,8 @@ window.rcmail && rcmail.addEventListener('init', function() {
                         text: rcmail.gettext('cancel'),
                         'class': 'cancel',
                         click: function() {
-                            factor_dialog.dialog('close');
+                            factor_dialog.dialog('destroy');
+                            window.location.reload();
                         }
                     }
                 ],
@@ -224,7 +225,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
                             text: rcmail.gettext('cancel'),
                             'class': 'cancel',
                             click: function() {
-                                highsec_dialog.dialog('close');
+                                highsec_dialog.dialog('destory');
                                 window.location.reload();
                             }
                         }
@@ -340,7 +341,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
         }
 
         if (factor_dialog) {
-            factor_dialog.dialog('close');
+            factor_dialog.dialog('destroy');
         }
 
         // render();
@@ -357,7 +358,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
                 func();
             }
 
-            highsec_dialog.dialog('close');
+            highsec_dialog.dialog('destroy');
             rcmail.env.session_secured = time();
         }
         else {
