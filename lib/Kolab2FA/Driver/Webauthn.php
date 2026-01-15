@@ -187,7 +187,8 @@ class Webauthn extends DriverBase
                 $rpEntity,
                 $userEntity,
                 $challenge,
-                authenticatorSelection: $authenticatorSelectionCriteria
+                authenticatorSelection: $authenticatorSelectionCriteria,
+                excludeCredentials: $this->get_current_registered_credentials()
             );
 
         // The serializer is the same as the one created in the previous pages
@@ -208,16 +209,10 @@ class Webauthn extends DriverBase
         return $jsonObject;
     }
 
-    /**
-     * Return Input field with Authentication data
-     * @throws RandomException
-     * @throws \Exception
-     */
-    public function login_input(string $name, string $field_id, array $attrib, ?bool $required = false) : ?html_inputfield
+    private function get_current_registered_credentials(): array
     {
-        //$rcmail = rcmail::get_instance();
         $me = $this;
-        $allowedCredentials = array_values(array_filter(array_map(
+        return array_values(array_filter(array_map(
             static function (string $factor) use ($me) {
                 [$method] = explode(':', $factor, 2);
                 if ($method === 'webauthn') {
@@ -239,12 +234,21 @@ class Webauthn extends DriverBase
             },
             $this->plugin->get_storage()->enumerate() //TODO: factor may be provided by other plugin
         )));
+    }
 
+    /**
+     * Return Input field with Authentication data
+     * @throws RandomException
+     * @throws \Exception
+     */
+    public function login_input(string $name, string $field_id, array $attrib, ?bool $required = false) : ?html_inputfield
+    {
+        //$rcmail = rcmail::get_instance();
         // Public Key Credential Request Options
         $publicKeyCredentialRequestOptions =
             PublicKeyCredentialRequestOptions::create(
                 random_bytes(32), // Challenge
-                allowCredentials: $allowedCredentials,
+                allowCredentials: $this->get_current_registered_credentials(),
                 userVerification: $this->config["authenticator_selection_criteria"]["user_verification"]
             )
         ;
