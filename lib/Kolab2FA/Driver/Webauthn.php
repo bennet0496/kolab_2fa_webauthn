@@ -289,7 +289,7 @@ class Webauthn extends DriverBase
         } finally {
             if (is_null($publicKeyCredential) || !$publicKeyCredential->response instanceof AuthenticatorAssertionResponse) {
                 //e.g. process here with a redirection to the public key login/MFA page.
-                rcube::raise_error("Invalid Authenticator Assertion Response", true);
+                rcube::raise_error($this->plugin->gettext("invalidauthenticatorresponse"), true);
                 return false;
             }
         }
@@ -303,7 +303,7 @@ class Webauthn extends DriverBase
             if ($publicKeyCredentialSource === null) {
                 // Throw an exception if the credential is not found.
                 // It can also be rejected depending on your security policy (e.g. disabled by the user because of loss)
-                rcube::raise_error("Invalid Data in User Profile.", true);
+                rcube::raise_error($this->plugin->gettext("invaliddatainup"), true);
                 return false;
             }
         }
@@ -322,7 +322,7 @@ class Webauthn extends DriverBase
             if ($publicKeyCredentialRequestOptions === null) {
                 // Throw an exception if the credential is not found.
                 // It can also be rejected depending on your security policy (e.g. disabled by the user because of loss)
-                rcube::raise_error("Invalid Session Data.", true);
+                rcube::raise_error($this->plugin->gettext("invalidsessiondata"), true);
                 unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
                 return false;
             }
@@ -376,7 +376,7 @@ class Webauthn extends DriverBase
             } finally {
                 if (!$publicKeyCredential->response instanceof AuthenticatorAttestationResponse) {
                     //e.g. process here with a redirection to the public key creation page.
-                    rcube::raise_error("Invalid Authenticator Assertion Response", true);
+                    rcube::raise_error($this->plugin->gettext("invalidauthenticatorresponse"), true);
                     return false;
                 }
             }
@@ -390,7 +390,7 @@ class Webauthn extends DriverBase
                 );
                 unset($_SESSION['kolab_2fa_webauthn']['public_key_credential_creation_options']);
             } catch (ExceptionInterface) {
-                rcube::raise_error("Invalid Session Data", true);
+                rcube::raise_error($this->plugin->gettext("invalidsessiondata"), true);
                 return false;
             }
 
@@ -405,7 +405,7 @@ class Webauthn extends DriverBase
                     $this->config['id']
                 );
             } catch (Throwable) {
-                rcube::raise_error("Invalid Authenticator Data", true);
+                rcube::raise_error($this->plugin->gettext("invalidauthenticatordata"), true);
                 return false;
             }
 
@@ -414,7 +414,7 @@ class Webauthn extends DriverBase
                 $key = "public_key_credential_source";
                 $value = $this->serializer->serialize($publicKeyCredentialSource, 'json');
             } catch (ExceptionInterface) {
-                rcube::raise_error("Failed to save data", true);
+                rcube::raise_error($this->plugin->gettext("factorsaveerror"), true);
                 return false;
             }
         }

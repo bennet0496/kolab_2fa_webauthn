@@ -36,6 +36,12 @@ $labels['qrcodeexplainhotp'] = 'Scan the QR code below with your Authenticator A
 $labels['yubikeyid'] = 'Your YubiKey ID';
 $labels['yubikeyidexplainyubikey'] = 'Press your YubiKey once and submit the generated code';
 
+$labels["invalidauthenticatorresponse"] = "Invalid Authenticator Assertion Response";
+$labels["invaliddatainup"] = "Invalid Data in User Profile.";
+$labels["invalidsessiondata"] = "Invalid Session Data.";
+$labels["invalidauthenticatordata"] = "Invalid Authenticator Data";
+
+
 $labels['factorforcedinfo'] = "You need to setup 2FA to continue, by adding an authentication factor below.";
 $labels['addfactor'] = 'Add Authentication Factor';
 $labels['testfactor'] = 'Test this factor';
