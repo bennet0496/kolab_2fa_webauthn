@@ -33,6 +33,7 @@ class TOTP extends DriverBase
         'digits'   => 6,
         'interval' => 30,
         'digest'   => 'sha1',
+        'window'   => 5
     ];
 
     protected array $config_keys = ['digits', 'digest'];
@@ -63,8 +64,12 @@ class TOTP extends DriverBase
             throw new \Exception('Digits must be at least 1.');
         }
 
-        if (!is_numeric($this->config['interval']) || $this->config['interval'] < 1) {
-            throw new \Exception('Interval must be at least 1.');
+        if (!is_numeric($this->config['interval']) || $this->config['interval'] < 10) {
+            throw new \Exception('Interval must be at least 10.');
+        }
+
+        if (!is_numeric($this->config['window']) || $this->config['window'] < 1) {
+            throw new \Exception('Window must be at least 0.');
         }
 
         if ($this->hasSemicolon($this->config['issuer'])) {
@@ -86,7 +91,7 @@ class TOTP extends DriverBase
     /**
      *
      */
-    public function verify(string $code, int $timestamp = null): bool
+    public function verify(string $code): bool
     {
         // get my secret from the user storage
         $secret = $this->get('secret');
@@ -98,20 +103,26 @@ class TOTP extends DriverBase
         $this->backend->setLabel($this->get('username'));
         $this->backend->setSecret($secret);
 
-        // Pass a window to indicate the maximum timeslip between client (mobile
-        // device) and server.
-        $pass = $this->backend->verify($code, (int) $timestamp, 150);
 
-        // try all codes from $timestamp till now
-        if (!$pass && $timestamp) {
-            $now = time();
-            while (!$pass && $timestamp < $now) {
-                $pass = $code === $this->backend->at($timestamp);
-                $timestamp += $this->config['interval'];
-            }
-        }
+        $timestamp = time();
+        // - 'window' is number as codes concurrently valid (similar to libpam_google_authenticator).
+        // - one code is always the current.
+        // - for odd windows, we have therefore an even number of additionally valid codes.
+        //   i.e. same amount of past and future valid codes
+        // - for even windows, we have therefore an odd number of additionally valid codes.
+        //   So we round-up the past codes and round down the future codes, asuming it is
+        //   slightly more likely for the clock to lack behind on the users device
+        $past = ceil(($this->config['window'] - 1) / 2);
+        $future = floor(($this->config['window'] - 1) / 2);
 
-        return $pass;
+        $timestamps = range(
+            $timestamp-$past*$this->config['interval'],
+            $timestamp+$future*$this->config['interval'],
+            $this->config['interval']);
+
+        $result = array_map(fn($t) => $this->backend->verify($code, $t), $timestamps);
+
+        return in_array(true, $result);
     }
 
     /**

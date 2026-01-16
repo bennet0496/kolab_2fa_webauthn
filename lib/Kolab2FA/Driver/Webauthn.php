@@ -279,7 +279,7 @@ class Webauthn extends DriverBase
      *
      * @throws \Exception when loading data failed
      */
-    public function verify(string $code, int $timestamp = null): bool
+    public function verify(string $code): bool
     {
         $rcmail = rcmail::get_instance();
         error_log("Webauthn::verify() was called: ". $code);

@@ -86,7 +86,7 @@ class HOTP extends DriverBase
     /**
      *
      */
-    public function verify(string $code, int $timestamp = null): bool
+    public function verify(string $code): bool
     {
         // get my secret from the user storage
         $secret  = $this->get('secret');

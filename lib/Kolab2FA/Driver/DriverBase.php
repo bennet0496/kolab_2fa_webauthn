@@ -142,7 +142,7 @@ abstract class DriverBase
      *
      * @return bool True if valid, false otherwise
      */
-    abstract public function verify(string $code, ?int $timestamp = null): bool;
+    abstract public function verify(string $code): bool;
 
     /**
      * Implement this method if the driver can be provisioned via QR code

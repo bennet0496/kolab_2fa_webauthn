@@ -62,7 +62,7 @@ class Yubikey extends DriverBase
     /**
      *
      */
-    public function verify(string $code, int $timestamp = null): bool
+    public function verify(string $code): bool
     {
         error_log("Yubikey::verify() was called");
         // get my secret from the user storage
