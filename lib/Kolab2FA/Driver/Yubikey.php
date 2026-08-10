@@ -78,8 +78,10 @@ class Yubikey extends DriverBase
             try {
                 $response = $this->backend->check($code);
                 $pass     = $response->success() === true;
-            } catch (\Exception) {
+                $this->plugin->log([$response, $pass]);
+            } catch (\Exception $e) {
                 // TODO: log exception
+                $this->plugin->log($e);
             }
         }
 
@@ -125,5 +127,11 @@ class Yubikey extends DriverBase
         }
 
         return parent::set_user_prop($key, $value);
+    }
+
+    public function is_direct(): bool
+    {
+        // TODO: Implement is_direct() method.
+        return false;
     }
 }

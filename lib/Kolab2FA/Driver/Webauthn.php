@@ -41,6 +41,7 @@ use Webauthn\AuthenticatorAttestationResponse;
 use Webauthn\AuthenticatorAttestationResponseValidator;
 use Webauthn\AuthenticatorSelectionCriteria;
 use Webauthn\CeremonyStep\CeremonyStepManager;
+use Webauthn\CredentialRecord;
 use Webauthn\Denormalizer\WebauthnSerializerFactory;
 use Webauthn\Exception\AuthenticatorResponseVerificationException;
 use Webauthn\PublicKeyCredential;
@@ -140,7 +141,6 @@ class Webauthn extends DriverBase
         $this->serializer = $factory->create();
 
         $csmFactory = new CeremonyStepManagerFactory();
-        $csmFactory->setSecuredRelyingPartyId([$this->config["id"]]);
         $csmFactory->setAllowedOrigins($this->config["allowed_origins"]);
 
         $this->creationCSM = $csmFactory->creationCeremony();
@@ -203,7 +203,7 @@ class Webauthn extends DriverBase
 
         $_SESSION['kolab_2fa_webauthn'] = [
             ...($_SESSION['kolab_2fa_webauthn'] ?? []),
-            "public_key_credential_creation_options"=> $jsonObject
+            "public_key_credential_creation_options_".$_SESSION["kolab_2fa_nonce"] => $jsonObject
         ];
 
         return $jsonObject;
@@ -243,22 +243,28 @@ class Webauthn extends DriverBase
      */
     public function login_input(string $name, string $field_id, array $attrib, ?bool $required = false) : ?html_inputfield
     {
-        //$rcmail = rcmail::get_instance();
-        // Public Key Credential Request Options
-        $publicKeyCredentialRequestOptions =
-            PublicKeyCredentialRequestOptions::create(
-                random_bytes(32), // Challenge
-                allowCredentials: $this->get_current_registered_credentials(),
-                userVerification: $this->config["authenticator_selection_criteria"]["user_verification"]
-            )
-        ;
-
         try {
-            $authOptions = $this->serializer->serialize($publicKeyCredentialRequestOptions, 'json');
-            $_SESSION['kolab_2fa_webauthn'] = [
-                ...($_SESSION['kolab_2fa_webauthn'] ?? []),
-                "public_key_credential_creation_options" => $authOptions
-            ];
+            if (!isset($_SESSION['kolab_2fa_webauthn']["public_key_credential_creation_options_".$_SESSION["kolab_2fa_nonce"]])) {
+                //$rcmail = rcmail::get_instance();
+                // Public Key Credential Request Options
+                $publicKeyCredentialRequestOptions =
+                    PublicKeyCredentialRequestOptions::create(
+                        random_bytes(32), // Challenge
+                        allowCredentials: $this->get_current_registered_credentials(),
+                        userVerification: $this->config["authenticator_selection_criteria"]["user_verification"]
+                    );
+
+
+                $authOptions = $this->serializer->serialize($publicKeyCredentialRequestOptions, 'json');
+
+                $_SESSION['kolab_2fa_webauthn'] = [
+                    ...($_SESSION['kolab_2fa_webauthn'] ?? []),
+                    "public_key_credential_creation_options_".$_SESSION["kolab_2fa_nonce"] => $authOptions,
+                ];
+            } else {
+                $authOptions = $_SESSION['kolab_2fa_webauthn']["public_key_credential_creation_options_".$_SESSION["kolab_2fa_nonce"]];
+                \kolab_2fa::log("restored previous auth options");
+            }
 
             return new html_inputfield([
                     'name' => $name,
@@ -282,7 +288,7 @@ class Webauthn extends DriverBase
     public function verify(string $code): bool
     {
         $rcmail = rcmail::get_instance();
-        error_log("Webauthn::verify() was called: ". $code);
+        \kolab_2fa::log("Webauthn::verify() was called: ". $code);
         //normal user authorization
 
         try {
@@ -300,7 +306,7 @@ class Webauthn extends DriverBase
 
         try {
             // Created during registration (updated on authentication)
-            $publicKeyCredentialSource = $this->serializer->deserialize($this->get('public_key_credential_source'), PublicKeyCredentialSource::class, 'json');
+            $publicKeyCredentialSource = $this->serializer->deserialize($this->get('public_key_credential_source'), CredentialRecord::class, 'json');
         } catch (ExceptionInterface) {
             $publicKeyCredentialSource = null;
         } finally {
@@ -315,7 +321,7 @@ class Webauthn extends DriverBase
         try {
             // Created previously for authentication
             $publicKeyCredentialRequestOptions = $this->serializer->deserialize(
-                $_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"],
+                $_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options_".$_SESSION["kolab_2fa_nonce"]],
                 PublicKeyCredentialRequestOptions::class,
                 'json');
             // Can't reset session yet. we might want to check multiple authenticators
@@ -327,7 +333,7 @@ class Webauthn extends DriverBase
                 // Throw an exception if the credential is not found.
                 // It can also be rejected depending on your security policy (e.g. disabled by the user because of loss)
                 rcube::raise_error($this->plugin->gettext("invalidsessiondata"), true);
-                unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
+                unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options_".$_SESSION["kolab_2fa_nonce"]]);
                 return false;
             }
         }
@@ -347,15 +353,15 @@ class Webauthn extends DriverBase
 
             $this->set('public_key_credential_source',$this->serializer->serialize($publicKeyCredentialSource, 'json'));
         } catch (AuthenticatorResponseVerificationException $e) {
-            error_log("Webauthn::verify() failed: ". $e->getMessage());
+            \kolab_2fa::log("Webauthn::verify() failed: ". $e->getMessage());
             return false;
         } catch (ExceptionInterface $e) {
             rcube::raise_error($e, true);
-            unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
+            unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options_".$_SESSION["kolab_2fa_nonce"]]);
             return true;
         }
 
-        unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options"]);
+        unset($_SESSION["kolab_2fa_webauthn"]["public_key_credential_creation_options_".$_SESSION["kolab_2fa_nonce"]]);
         return true;
     }
 
@@ -388,11 +394,11 @@ class Webauthn extends DriverBase
             try {
                 // Created previously for registration
                 $publicKeyCredentialCreationOptions = $this->serializer->deserialize(
-                    $_SESSION['kolab_2fa_webauthn']['public_key_credential_creation_options'],
+                    $_SESSION['kolab_2fa_webauthn']['public_key_credential_creation_options_'.$_SESSION["kolab_2fa_nonce"]],
                     PublicKeyCredentialCreationOptions::class,
                     'json'
                 );
-                unset($_SESSION['kolab_2fa_webauthn']['public_key_credential_creation_options']);
+                unset($_SESSION['kolab_2fa_webauthn']['public_key_credential_creation_options_'.$_SESSION["kolab_2fa_nonce"]]);
             } catch (ExceptionInterface) {
                 rcube::raise_error($this->plugin->gettext("invalidsessiondata"), true);
                 return false;
@@ -437,5 +443,11 @@ class Webauthn extends DriverBase
         }
 
         return parent::set_user_prop($key, $value);
+    }
+
+    public function is_direct(): bool
+    {
+        // TODO: Implement is_direct() method.
+        return true;
     }
 }

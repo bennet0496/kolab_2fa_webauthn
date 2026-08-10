@@ -26,8 +26,18 @@
  */
 
 window.rcmail && rcmail.addEventListener('init', function() {
+    /**
+     *
+     * @type {function[]}
+     */
     const highsec_call_stack = [];
+    /**
+     * @var {any|jQuery|HTMLElement}
+     */
     let highsec_dialog;
+    /**
+     * @var {any|jQuery|HTMLElement}
+     */
     let factor_dialog;
 
     if (!rcmail.env.kolab_2fa_factors) {
@@ -42,91 +52,70 @@ window.rcmail && rcmail.addEventListener('init', function() {
     }
 
     /**
-     * Render the settings UI
-     */
-    function render() {
-        const table = $('#kolab2fa-factors tbody');
-        table.html('');
-
-        let rows = 0;
-        $.each(rcmail.env.kolab_2fa_factors, function(id, props) {
-            if (props.active) {
-                const tr = $('<tr>').addClass(props.method).appendTo(table),
-                    button = $('<a class="button icon delete">').attr({href: '#', rel: id})
-                        .append($('<span class="inner">').text(rcmail.get_label('remove', 'kolab_2fa')));
-
-                $('<td>').addClass('name').text(props.label || props.name).appendTo(tr);
-                $('<td>').addClass('created').text(props.created || '??').appendTo(tr);
-                $('<td>').addClass('actions buttons-cell').append(button).appendTo(tr);
-                rows++;
-            }
-        });
-
-        table.parent()[(rows > 0 ? 'show' : 'hide')]();
-    }
-
-    /**
      * Open dialog to add the given authentication factor
      */
     function add_factor(method) {
         // noinspection JSUnusedLocalSymbols
-        let lock, form = $('#kolab2fa-prop-' + method),
-            props = rcmail.env.kolab_2fa_factors[method];
+        let lock;
+        /**
+         * @type {Node}
+         */
+        const formTemplate = document.querySelector('#kolab2fa-template-' + method)
+            .content.cloneNode(true);
 
         rcmail.triggerEvent('kolab2fa_add_factor', { method: method });
 
-        if (form.length) {
-            form.get(0).reset();
-            form.find('img.qrcode').attr('src', 'data:image/gif;base64,R0lGODlhDwAPAIAAAMDAwAAAACH5BAEAAAAALAAAAAAPAA8AQAINhI+py+0Po5y02otnAQA7');
-            form.off('submit');
-
-            factor_dialog = rcmail.show_popup_dialog(
-                form.show(),
-                rcmail.get_label('addfactor', 'kolab_2fa'),
-                [
-                    {
-                        text: rcmail.gettext('save', 'kolab_2fa'),
-                        'class': 'mainaction save',
-                        click: function() {
-                            save_data(method);
-                        }
-                    },
-                    {
-                        text: rcmail.gettext('cancel'),
-                        'class': 'cancel',
-                        click: function() {
-                            factor_dialog.dialog('destroy');
-                            window.location.reload();
-                        }
-                    }
-                ],
+        factor_dialog = rcmail.show_popup_dialog(
+            formTemplate,
+            rcmail.get_label('addfactor', 'kolab_2fa'),
+            [
                 {
-                    open: function(event) {
-                        $(event.target).find('input[name="_verify_code"]').keypress(function(e) {
-                            if (e.which === 13) {
-                                $(e.target).closest('.ui-dialog').find('button.mainaction').click();
-                            }
-                        });
-                    },
-                    close: function() {
-                        form.hide().appendTo(document.body);
-                        factor_dialog = null;
-                    },
-                    height: (method === "totp" || method === "htop") ? 500 : 160
+                    text: rcmail.gettext('save', 'kolab_2fa'),
+                    'class': 'mainaction save',
+                    click: function() {
+                        save_data(method);
+                    }
+                },
+                {
+                    text: rcmail.gettext('cancel'),
+                    'class': 'cancel',
+                    click: function() {
+                        factor_dialog.dialog('destroy');
+                        window.location.reload();
+                    }
                 }
-            )
-            .data('method', method)
-            .data('timestamp', time());
+            ],
+            {
+                open: function(event) {
+                    event.target.querySelector('input[name="_verify_code"]')?.addEventListener('keydown',
+                        /**
+                         * @param {KeyboardEvent} e
+                         */
+                        function(e) {
+                        if (e.key === 'Enter') {
+                            e.target.closest('.ui-dialog').querySelector('button.mainaction').click();
+                        }
+                    });
+                },
+                close: function() {
+                    formTemplate.parentNode?.removeChild(formTemplate);
+                    factor_dialog.dialog('destroy');
+                },
+                height: (method === "totp" || method === "htop") ? 500 : 160
+            }
+        )
+        .data('method', method);
 
-            form.on('submit', function() {
-                save_data(method);
-                return false;
-            });
+        console.log(formTemplate);
+        document.querySelector("form.propform").addEventListener('submit', function(sevent) {
+            save_data(method);
+            sevent.preventDefault();
+            return false;
+        });
 
-            // load generated data
-            lock = rcmail.set_busy(true, 'loading');
-            rcmail.http_post('plugin.kolab-2fa-data', { _method: method }, lock);
-        }
+        // load generated data
+        lock = rcmail.set_busy(true, 'loading');
+        rcmail.http_post('plugin.kolab-2fa-data', { _method: method }, lock);
     }
 
     /**
@@ -141,41 +130,44 @@ window.rcmail && rcmail.addEventListener('init', function() {
      * Submit factor settings form
      */
     function save_data(method) {
-        let lock, data, form = $('#kolab2fa-prop-' + method),
-            verify = form.find('input[name="_verify_code"]');
+        const form = document.querySelector('#kolab2fa-prop-' + method);
+        const verify = form?.querySelector('input[name="_verify_code"]');
 
-        if (verify.length && !verify.val().length) {
+        if (verify !== null && !verify.value.length) {
             alert(rcmail.get_label('verifycodemissing','kolab_2fa'));
             verify.select();
             return false;
         }
 
-        data = form_data(form);
-        lock = rcmail.set_busy(true, 'saving');
+        const data = form_data(form);
+        const lock = rcmail.set_busy(true, 'saving');
         rcmail.http_post('plugin.kolab-2fa-save', {
             _method: data.id || method,
             _data: JSON.stringify(data),
-            _verify_code: verify.val(),
-            _timestamp: factor_dialog ? factor_dialog.data('timestamp') : null
+            _verify_code: verify?.value,
         }, lock);
     }
 
     /**
      * Collect all factor properties from the form
+     *
+     * @param {HTMLFormElement} form
      */
     function form_data(form)
     {
         const data = {};
-        form.find('input, select').each(function(i, elem) {
-            console.log(elem);
-            if (elem.name.indexOf('_prop') === 0) {
-                console.log("prop")
-                const k = elem.name.match(/\[([a-z0-9_.-]+)]$/i); //? RegExp.$1 : null;
-                if (k?.length > 1) {
-                    console.log(k)
-                    data[k[1]] = elem.tagName === 'SELECT' ? $('option:selected', elem).val() : $(elem).val();
+        form.querySelectorAll('input, select')
+            .forEach(function(elem) {
+                console.log(elem);
+                if (elem.name.startsWith('_+prop')) {
+                    console.log("prop")
+                    const k = elem.name.match(/\[([a-z0-9_.-]+)]$/i); //? RegExp.$1 : null;
+                    if (k?.length > 1) {
+                        console.log(k)
+                        data[k[1]] = elem.tagName === 'SELECT' ?
+                            elem.querySelector('option:selected')?.value : elem.value;
+                    }
                 }
-            }
         });
 
         return data;
@@ -207,7 +199,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
 
                 // TODO: list all active factors to choose from
                 // var html = String($('#kolab2fa-highsecuritydialog').html()).replace('$name', name);
-                const template = document.querySelector('#kolab2fa-highsecuritydialog');
+                const template = document.querySelector('#kolab2fa-template-highsecuritydialog');
 
                 highsec_dialog = rcmail.show_popup_dialog(
                     template.content.cloneNode(true),
@@ -222,8 +214,16 @@ window.rcmail && rcmail.addEventListener('init', function() {
                             'class': 'mainaction save'
                         },
                         {
+                            text: rcmail.gettext('choose_other', 'kolab_2fa'),
+                            click: function(e) {
+                                document.querySelectorAll(".rcmlogin2famethodrow").forEach(r => r.classList.add("hidden"));
+                                document.querySelectorAll(".rcmlogin2famethodchooserrow, .rcmlogin2famethoddirect").forEach(r => r.classList.remove("hidden"));
+                            },
+                            'class': ''
+                        },
+                        {
                             text: rcmail.gettext('cancel'),
-                            'class': 'cancel',
+                            'class': 'cancel btn-danger',
                             click: function() {
                                 highsec_dialog.dialog('destory');
                                 window.location.reload();
@@ -260,6 +260,20 @@ window.rcmail && rcmail.addEventListener('init', function() {
                             });
 
                             rcmail.triggerEvent('kolab2fa_style_elements', { form: $("#highsec-form") });
+                            document.querySelectorAll(".rcmlogin2famethodchooserrow span.input-group-prepend").forEach(e => e.parentElement.removeChild(e))
+                            document.querySelectorAll(".rcmlogin2famethodchooserrow input[type=hidden]").forEach(e => e.parentElement.removeChild(e))
+
+                            $(".rcmlogin2famethodchooserrow button").click(function (ev){
+                                console.log(ev);
+                                const method = ev.target.value;
+                                document.querySelectorAll(".rcmlogin2famethodchooserrow, .rcmlogin2famethodrow").forEach((r) => {
+                                    console.log(r)
+                                    r.classList.add("hidden");
+                                });
+
+                                document.querySelector(".rcmlogin2famethod" + method)?.classList.remove("hidden");
+                                document.querySelector("#rcmlogin2faother")?.classList.remove("hidden");
+                            });
 
                             //$("#highsec-form").on('submit',
                             document.querySelector('#highsec-form').addEventListener('submit', function(e) {
@@ -306,25 +320,89 @@ window.rcmail && rcmail.addEventListener('init', function() {
         func.call(this);
     }
 
-    // callback for factor data provided by the server
-    rcmail.addEventListener('plugin.render_data', function(data) {
-        const method = data.method,
-            form = $('#kolab2fa-prop-' + method);
+    /**
+     * @var
+     */
+    const {startRegistration, startAuthentication} = SimpleWebAuthnBrowser;
 
-        console.log(data);
-        rcmail.triggerEvent('kolab2fa_render_data', { data: data, form: form });
+    /**
+     *
+     * @param {*} data
+     * @param {HTMLElement} form
+     */
+    function render_data(data, form) {
+        if (data.method === 'webauthn') {
+            // const data = await rcmail.http_get('plugin.kolab-2fa-webauthn-gro', {})
+            const optionsJSON = JSON.parse(data.registration_options);
 
-        if (form.length) {
-            $.each(data, function(field, value) {
-                form.find('[name="_prop[' + field + ']"]').val(value);
+            startRegistration({optionsJSON}).then(attResp => {
+                console.log(attResp);
+                let responseElement = document.createElement("input");
+                responseElement.type = "hidden";
+                responseElement.name = "_prop[creation_response]";
+                responseElement.value = JSON.stringify(attResp);
+
+                form.appendChild(responseElement);
+            }).catch(error => {
+                console.log(error);
+
+                const span = document.createElement("span");
+                span.style.textAlign = "left";
+                span.innerText = error;
+
+                document.querySelector(".ui-dialog-content")
+                    .replaceChildren(span);
+
+                document.querySelector(".mainaction").remove();
             });
+        } else if (data.method === 'backupcodes') {
+            /**
+             * @var {number} code
+             */
+            for (let code in data.codes) {
+                const span = document.createElement("span");
+                span.style.textAlign = "left";
+                span.innerText = data.codes[code];
+                span.style.fontFamily = 'monospace, "Roboto Mono", "Ubuntu Mono"';
+                span.style.marginInlineEnd = "1em";
+                span.style.display = "inline-block";
 
-            if (data.qrcode) {
-                $('img.qrcode[rel='+method+']').attr('src', "data:image/png;base64," + data.qrcode);
+                form.append(span, document.createElement("br"));
             }
         }
-        else if (window.console) {
+    }
+
+    // callback for factor data provided by the server
+    rcmail.addEventListener('plugin.render_data', function(data) {
+        /**
+         * @var {string} method
+         */
+        const method = data.method;
+        const form = document.querySelector('#kolab2fa-prop-' + method);
+
+        if (form === null) {
             console.error("Cannot assign auth data", data);
+            return;
+        }
+
+        if (data.error) {
+            form.innerText = data.error;
+            return;
+        }
+
+        console.log(data);
+
+        render_data(data, form);
+
+        for (let dataKey in data) {
+            const element = form.querySelector("[name=\"_prop[" + dataKey + "]\"]");
+            if (element) {
+                element.value = data[dataKey];
+            }
+
+            if (data.qrcode) {
+                document.querySelector('img.qrcode[rel='+method+']').src = data.qrcode;
+            }
         }
     });
 
@@ -351,6 +429,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
     // callback for verify action
     rcmail.addEventListener('plugin.verify_response', function(data) {
         // execute high-security call stack and close dialog
+        console.log(highsec_dialog)
         if (data.success && highsec_dialog && highsec_dialog.is(':visible')) {
             let func;
             while (highsec_call_stack.length) {
@@ -380,42 +459,37 @@ window.rcmail && rcmail.addEventListener('init', function() {
             rcmail.env.kolab_2fa_factors[method].active = false;
         }
 
-        render();
+        // render();
     });
 
     // handler for selections
-    $('#kolab2fa-add').change(function() {
-        const method = $('option:selected', this).val();
+    // needs to stay jquery other change event is not captureable in any way.
+    $("#kolab2fa-add").change(function() {
+        const method = this.value;
 
         // require auth verification
         require_high_security(function() {
             add_factor(method);
         });
 
+        // noinspection JSUnusedGlobalSymbols
         this.selectedIndex = 0;
     });
 
+
     // handler for delete button clicks
-    $('#kolab2fa-factors tbody').on('click', '.button.delete', function() {
-        const id = $(this).attr('rel');
+    document.querySelectorAll("#kolab2fa-factors tbody .button.delete").forEach(function (element) {
+        element.addEventListener('click', function () {
+                const id = element.getAttribute("rel");
 
-        // require auth verification
-        require_high_security(function() {
-            if (confirm(rcmail.get_label('authremoveconfirm', 'kolab_2fa'))) {
-                remove_factor(id);
-            }
-        }, id);
+                // require auth verification
+                require_high_security(function() {
+                    if (confirm(rcmail.get_label('authremoveconfirm', 'kolab_2fa'))) {
+                        remove_factor(id);
+                    }
+                }, id);
 
-        return false;
-    });
-
-    // submit verification code on <Enter>
-    $('.propform input.k2fa-verify').keypress(function(e) {
-        if (e.which === 13) {
-            $(this).closest('.propform').find('.button.verify').click();
-        }
-    });
-
-    // render list initially
-    render();
+                return false;
+        });
+    })
 });

@@ -21,7 +21,7 @@
 </div>
 
 <roundcube:object name="plugin.settingsform" class="propform" />
-<template id="kolab2fa-highsecuritydialog">
+<template id="kolab2fa-template-highsecuritydialog">
     <div class="kolab2fa-highsecuritydialog">
         <div class="explain form-text">
             <roundcube:label name="kolab_2fa.highsecuritydialog" />
@@ -29,10 +29,6 @@
         <div class="propform row form-group">
             <roundcube:form id="highsec-form" name="highsec-form" method="dialog" class="propform">
             <roundcube:object name="plugin.highsecuritydialogform" form="highsec-form" size="40" class="form-control" />
-<!--            <label for="rcmk2facode" class="col-form-label col-sm-4">$name</label>-->
-<!--            <div class="col-sm-8">-->
-<!--                <input name="_code" id="rcmk2facode" class="verifycode form-control" size="20" value="" type="text">-->
-<!--            </div>-->
             </form>
         </div>
     </div>

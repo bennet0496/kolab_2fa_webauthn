@@ -144,4 +144,10 @@ class TOTP extends DriverBase
 
         return $this->backend->getProvisioningUri();
     }
+
+    public function is_direct(): bool
+    {
+        // TODO: Implement is_direct() method.
+        return false;
+    }
 }

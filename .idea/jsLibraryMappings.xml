@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <file url="PROJECT" libraries="{jquery, rcmail}" />
+    <file url="PROJECT" libraries="{jquery, rcmail, simplewebauthn_browser_13.2.2_index.umd.min.js}" />
   </component>
 </project>

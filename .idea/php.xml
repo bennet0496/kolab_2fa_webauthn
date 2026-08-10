@@ -17,7 +17,6 @@
   </component>
   <component name="PhpIncludePathManager">
     <include_path>
-      <path value="$PROJECT_DIR$/vendor/beberlei/assert" />
       <path value="$PROJECT_DIR$/vendor/brick/math" />
       <path value="$PROJECT_DIR$/vendor/composer" />
       <path value="$PROJECT_DIR$/vendor/doctrine/deprecations" />
@@ -84,8 +83,6 @@
       <path value="$PROJECT_DIR$/vendor/symfony/polyfill-intl-grapheme" />
       <path value="$PROJECT_DIR$/vendor/symfony/polyfill-intl-normalizer" />
       <path value="$PROJECT_DIR$/vendor/symfony/polyfill-mbstring" />
-      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php83" />
-      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php84" />
       <path value="$PROJECT_DIR$/vendor/symfony/polyfill-uuid" />
       <path value="$PROJECT_DIR$/vendor/symfony/property-access" />
       <path value="$PROJECT_DIR$/vendor/symfony/property-info" />
@@ -93,7 +90,6 @@
       <path value="$PROJECT_DIR$/vendor/symfony/string" />
       <path value="$PROJECT_DIR$/vendor/symfony/type-info" />
       <path value="$PROJECT_DIR$/vendor/symfony/uid" />
-      <path value="$PROJECT_DIR$/vendor/thecodingmachine/safe" />
       <path value="$PROJECT_DIR$/vendor/theseer/tokenizer" />
       <path value="$PROJECT_DIR$/vendor/web-auth/cose-lib" />
       <path value="$PROJECT_DIR$/vendor/web-auth/webauthn-lib" />
@@ -101,6 +97,28 @@
       <path value="$PROJECT_DIR$/../../program/include" />
       <path value="$PROJECT_DIR$/../../program/lib" />
       <path value="$PROJECT_DIR$/../../vendor" />
+      <path value="$PROJECT_DIR$/vendor/nette/schema" />
+      <path value="$PROJECT_DIR$/vendor/nette/utils" />
+      <path value="$PROJECT_DIR$/vendor/dflydev/dot-access-data" />
+      <path value="$PROJECT_DIR$/vendor/mlocati/ip-lib" />
+      <path value="$PROJECT_DIR$/vendor/dasprid/enum" />
+      <path value="$PROJECT_DIR$/vendor/league/config" />
+      <path value="$PROJECT_DIR$/vendor/league/commonmark" />
+      <path value="$PROJECT_DIR$/vendor/pear/mail_mime" />
+      <path value="$PROJECT_DIR$/vendor/pear/net_sieve" />
+      <path value="$PROJECT_DIR$/vendor/pear/net_socket" />
+      <path value="$PROJECT_DIR$/vendor/pear/pear-core-minimal" />
+      <path value="$PROJECT_DIR$/vendor/pear/net_smtp" />
+      <path value="$PROJECT_DIR$/vendor/pear/auth_sasl" />
+      <path value="$PROJECT_DIR$/vendor/pear/pear_exception" />
+      <path value="$PROJECT_DIR$/vendor/pear/crypt_gpg" />
+      <path value="$PROJECT_DIR$/vendor/pear/console_getopt" />
+      <path value="$PROJECT_DIR$/vendor/bacon/bacon-qr-code" />
+      <path value="$PROJECT_DIR$/vendor/masterminds/html5" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php85" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php80" />
+      <path value="$PROJECT_DIR$/vendor/roundcube/roundcubemail" />
+      <path value="$PROJECT_DIR$/vendor/roundcube/rtf-html-php" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />

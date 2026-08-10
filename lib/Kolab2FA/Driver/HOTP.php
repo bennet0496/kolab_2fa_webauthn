@@ -141,4 +141,10 @@ class HOTP extends DriverBase
     {
         return mt_rand(1, 999);
     }
+
+    public function is_direct(): bool
+    {
+        // TODO: Implement is_direct() method.
+        return false;
+    }
 }

@@ -85,6 +85,7 @@ abstract class DriverBase
             'hotp'    => '\\Kolab2FA\\Driver\\HOTP',
             'yubikey' => '\\Kolab2FA\\Driver\\Yubikey',
             'webauthn' => '\\Kolab2FA\\Driver\\Webauthn',
+            'backupcodes' => '\\Kolab2FA\\Driver\\Backupcodes',
         ];
 
         $cls = $classmap[strtolower($method)];
@@ -329,6 +330,8 @@ abstract class DriverBase
                 'data-icon'    => 'key', // for Elastic
             ] + $attrib);
     }
+
+    public abstract function is_direct() : bool;
 
     /**
      * Checks that a string contains a semicolon
