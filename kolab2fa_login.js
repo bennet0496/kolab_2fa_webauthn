@@ -48,10 +48,6 @@ document.addEventListener("readystatechange", function () {
            document.querySelector("#rcmlogin2faother").classList.remove("hidden");
         });
 
-        /**
-         * <span class="input-group-prepend"><i class="input-group-text icon 6ffb09c866fe8a4162efc1cba6183d200fe3613a9ae24688403ad02479b29f1c_yubikey key"></i></span>
-         */
-
         document.querySelectorAll("input.kolab2facode").forEach((ipb) => {
             const appendSpan = document.createElement("span");
             appendSpan.className = "input-group-append";

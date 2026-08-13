@@ -34,10 +34,21 @@ class kolab_2fa extends rcube_plugin
     public static function log(...$args): void
     {
         $caller = debug_backtrace();
-        $file = basename($caller[0]['file']);
-        foreach ($args as $arg) {
-            error_log("$file:{$caller[0]['line']}:{$caller[1]['function']}() ".json_encode($arg));
+        if ($caller[1]['function'] == 'debug') {
+            $offset = 1;
+        } else {
+            $offset = 0;
         }
+        $file = basename($caller[0+$offset]['file']);
+        foreach ($args as $arg) {
+            error_log("$file:{$caller[0+$offset]['line']}:{$caller[1+$offset]['function']}() ".json_encode($arg));
+        }
+    }
+
+    public static function debug(...$args): void
+    {
+        if (rcmail::get_instance()->config->get('devel_mode', false))
+            self::log(...$args);
     }
 
     /**
@@ -96,7 +107,7 @@ class kolab_2fa extends rcube_plugin
     public function ready($args) {
         $rcmail = rcmail::get_instance();
 
-//        self::log($_SESSION);
+//        self::debug($_SESSION);
 
         if (!($_SESSION['kolab_2fa_login_verified'] ?? false) &&
             !in_array($args['action'], ['plugin.kolab-2fa-login', 'plugin.kolab-2fa-login-cancel', 'keep-alive', 'refresh'])) {
@@ -113,7 +124,7 @@ class kolab_2fa extends rcube_plugin
                     $_SESSION['kolab_2fa_time'] = time();
                     $_SESSION['kolab_2fa_nonce'] = bin2hex(openssl_random_pseudo_bytes(32));
 
-                    self::log("GENERATED NONCE " . $_SESSION['kolab_2fa_nonce']);
+                    self::debug("GENERATED NONCE " . $_SESSION['kolab_2fa_nonce']);
                 }
 
                 // 4. render to 2nd auth step
@@ -157,8 +168,6 @@ class kolab_2fa extends rcube_plugin
         // focus the code input field on load
         $this->include_script('kolab2fa_login.js');
         $this->include_stylesheet('kolab2a_login.css');
-//        $this->api->output->add_script('', 'docready');
-//        $this->api->output->add_header('<style>#login-form table tr:not(:first-child)::before { content: \'' . $this->gettext('or') . '\'; text-align:center; width: 100%}</style>');
         $this->api->output->set_env('task', 'login');
 
         if (isset($_SESSION['kolab_2fa_login_verified']) && !$_SESSION['kolab_2fa_login_verified']) {
@@ -198,7 +207,7 @@ class kolab_2fa extends rcube_plugin
                 $code = rcube_utils::get_input_value("_{$nonce}_$method", rcube_utils::INPUT_POST);
                 $_SESSION['kolab_2fa_login_verified'] = $this->verify_factor_auth($factor, $code, $username);
 
-                self::log([$factor, $code, $username, $_SESSION['kolab_2fa_login_verified']]);
+                self::debug([$factor, $code, $username, $_SESSION['kolab_2fa_login_verified']]);
 
                 // accept first successful method
                 if ($_SESSION['kolab_2fa_login_verified']) {
@@ -208,7 +217,7 @@ class kolab_2fa extends rcube_plugin
             }
         }
 
-        self::log($_SESSION);
+        self::debug($_SESSION);
 
         if (!$_SESSION['kolab_2fa_login_verified']) {
             $this->log_2fa($used_factor, $username, true, 1);
@@ -241,7 +250,13 @@ class kolab_2fa extends rcube_plugin
 
         $this->log_2fa($used_factor);
 
-        self::log($args);
+        $prefs = $rcmail->user->get_prefs();
+        if (!str_starts_with($prefs['kolab_2fa_last_used'] ?? "", "backupcodes")) {
+            $prefs['kolab_2fa_last_used'] = $used_factor;
+            $rcmail->user->save_prefs($prefs);
+        }
+
+        self::debug($args);
 
         if ($url = rcube_utils::get_input_string('_url', rcube_utils::INPUT_POST)) {
             parse_str($url, $query);
@@ -281,14 +296,18 @@ class kolab_2fa extends rcube_plugin
         $form_name = !empty($attrib['form']) ? $attrib['form'] : 'form';
         $nonce = $_SESSION['kolab_2fa_nonce'];
 
-        self::log("READ NONCE ".$nonce);
+        self::debug("READ NONCE ".$nonce);
+
+        $factors = $this->get_factors();
+        $prefs = rcmail::get_instance()->user->get_prefs();
+        $last_used = $prefs['kolab_2fa_last_used'];
 
         $methods = array_unique(array_map(
             function ($factor) {
                 [$method,] = explode(':', $factor);
                 return $method;
             },
-            $this->get_factors()
+            [in_array($last_used, $factors) ? $last_used : array_first($factors), ...$factors]
         ));
 
         if ($is_login) {
@@ -319,8 +338,7 @@ class kolab_2fa extends rcube_plugin
 
             if (!$this->get_driver($method)->is_direct()) {
                 $table->set_row_attribs(['class' => 'rcmlogin2famethodchooserrow hidden form-group row']);
-//                $table->add(['class' => 'title'], html::label($field_id."choose", html::quote($this->gettext($method))));
-                $table->add(['class' => 'input', 'colspan' => 2], //w-100 input-group-lg
+                $table->add(['class' => 'input', 'colspan' => 2],
                           html::tag('button', [
                               'type' => 'button',
                               'id' => $field_id."choose",
@@ -494,7 +512,6 @@ class kolab_2fa extends rcube_plugin
         $this->register_handler('plugin.settingslist', [$this, 'settings_list']);
         $this->register_handler('plugin.factoradder', [$this, 'settings_factoradder']);
         $this->register_handler('plugin.factorinfo', [$this, 'settings_factorinfo']);
-//        $this->register_handler('plugin.highsecuritydialogform', [$this, 'settings_highsecuritydialog']);
 
         $this->include_script('kolab2fa.js');
         $this->include_stylesheet($this->local_skin_path() . '/kolab2fa.css');
@@ -727,13 +744,11 @@ class kolab_2fa extends rcube_plugin
         $method = rcube_utils::get_input_value('_method', rcube_utils::INPUT_POST);
         $data = @json_decode(rcube_utils::get_input_value('_data', rcube_utils::INPUT_POST), true);
 
-        //$rcmail = rcmail::get_instance();
-        //$storage = $this->get_storage($rcmail->get_user_name());
         $success = false;
         $errors = 0;
         $save_data = [];
 
-        self::log($_POST);
+        self::debug($_POST);
 
         if ($driver = $this->get_driver($method)) {
             if ($method === 'backupcodes'){
@@ -751,7 +766,6 @@ class kolab_2fa extends rcube_plugin
                     $errors++;
                 }
             } else {
-                self::log($driver->props());
                 // verify the submitted code before saving
                 $verify_code = rcube_utils::get_input_value('_verify_code', rcube_utils::INPUT_POST);
                 if (!empty($verify_code)) {
@@ -859,7 +873,7 @@ class kolab_2fa extends rcube_plugin
                 $driver->commit();
             }
 
-            self::log($data);
+            self::debug($data);
 
             $this->api->output->command('plugin.render_data', $data);
         }
@@ -873,8 +887,6 @@ class kolab_2fa extends rcube_plugin
      */
     public function settings_verify(): void
     {
-//        $method = rcube_utils::get_input_value('_method', rcube_utils::INPUT_POST);
-//        $timestamp = intval(rcube_utils::get_input_value('_timestamp', rcube_utils::INPUT_POST));
         $success = false;
 
         $rcmail = rcmail::get_instance();
@@ -885,7 +897,7 @@ class kolab_2fa extends rcube_plugin
         $expired = $time < time() - $rcmail->config->get('kolab_2fa_timeout', 120);
         $username = !empty($_SESSION['kolab_auth_admin']) ? $_SESSION['kolab_auth_admin'] : $_SESSION['username'];
 
-        self::log($_SESSION);
+        self::debug($_SESSION);
 
         $used_factor = null;
 
@@ -929,6 +941,12 @@ class kolab_2fa extends rcube_plugin
             [$method] = explode(':', $used_factor, 2);
         } else {
             $method = null;
+        }
+
+        $prefs = $rcmail->user->get_prefs();
+        if (!str_starts_with($prefs['kolab_2fa_last_used'] ?? "", "backupcodes")) {
+            $prefs['kolab_2fa_last_used'] = $used_factor;
+            $rcmail->user->save_prefs($prefs);
         }
 
         $rcmail->session->remove('kolab_2fa_time');

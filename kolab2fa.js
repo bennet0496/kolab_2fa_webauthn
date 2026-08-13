@@ -289,7 +289,6 @@ window.rcmail && rcmail.addEventListener('init', function() {
                         document.querySelector("#rcmlogin2faother")?.classList.remove("hidden");
                     });
 
-                    //$("#highsec-form").on('submit',
                     document.querySelector('#highsec-form').addEventListener('submit', function(e) {
                         e.preventDefault();
                         if (highsec_lock) {
@@ -318,11 +317,6 @@ window.rcmail && rcmail.addEventListener('init', function() {
                         return false;
                     });
 
-                    // $(event.target).closest('input.kolab2facode').keypress(function(e) {
-                    //     if (e.which === 13) {
-                    //         $(e.target).closest('.ui-dialog').find('button.mainaction').click();
-                    //     }
-                    // }).select();
                 },
                 close: function() {
                     $(this).remove();
@@ -345,7 +339,6 @@ window.rcmail && rcmail.addEventListener('init', function() {
      */
     function render_data(data, form) {
         if (data.method === 'webauthn') {
-            // const data = await rcmail.http_get('plugin.kolab-2fa-webauthn-gro', {})
             const optionsJSON = JSON.parse(data.registration_options);
 
             startRegistration({optionsJSON}).then(attResp => {
