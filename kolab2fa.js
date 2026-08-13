@@ -40,6 +40,11 @@ window.rcmail && rcmail.addEventListener('init', function() {
      */
     let factor_dialog;
 
+    /**
+     * @type {boolean}
+     */
+    let highsec_lock = false;
+
     if (!rcmail.env.kolab_2fa_factors) {
         rcmail.env.kolab_2fa_factors = {};
     }
@@ -159,7 +164,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
         form.querySelectorAll('input, select')
             .forEach(function(elem) {
                 console.log(elem);
-                if (elem.name.startsWith('_+prop')) {
+                if (elem.name.startsWith('_prop')) {
                     console.log("prop")
                     const k = elem.name.match(/\[([a-z0-9_.-]+)]$/i); //? RegExp.$1 : null;
                     if (k?.length > 1) {
@@ -197,120 +202,7 @@ window.rcmail && rcmail.addEventListener('init', function() {
             if (method) {
                 highsec_call_stack.push(func);
 
-                // TODO: list all active factors to choose from
-                // var html = String($('#kolab2fa-highsecuritydialog').html()).replace('$name', name);
-                const template = document.querySelector('#kolab2fa-template-highsecuritydialog');
-
-                highsec_dialog = rcmail.show_popup_dialog(
-                    template.content.cloneNode(true),
-                    rcmail.get_label('highsecurityrequired', 'kolab_2fa'),
-                    [
-                        {
-                            text: rcmail.gettext('enterhighsecurity', 'kolab_2fa'),
-                            click: function(e) {
-                                console.log("submit highsec form from button:", e, e.target);
-                                document.querySelector('#highsec-form').requestSubmit();
-                            },
-                            'class': 'mainaction save'
-                        },
-                        {
-                            text: rcmail.gettext('choose_other', 'kolab_2fa'),
-                            click: function(e) {
-                                document.querySelectorAll(".rcmlogin2famethodrow").forEach(r => r.classList.add("hidden"));
-                                document.querySelectorAll(".rcmlogin2famethodchooserrow, .rcmlogin2famethoddirect").forEach(r => r.classList.remove("hidden"));
-                            },
-                            'class': ''
-                        },
-                        {
-                            text: rcmail.gettext('cancel'),
-                            'class': 'cancel btn-danger',
-                            click: function() {
-                                highsec_dialog.dialog('destory');
-                                window.location.reload();
-                            }
-                        }
-                    ],
-                    {
-                        open: function(event, ui) {
-                            // submit code on <Enter>
-                            console.log("opening highsec form ", event, ui);
-
-                            $(event.target).find('form table tr').each(function() {
-                                const input = $('input,select', this),
-                                    label = $('label', this),
-                                    icon_name = input.data('icon'),
-                                    icon = $('<i>').attr('class', 'input-group-text icon ' + input.attr('name').replace('_', ''));
-
-                                if (icon_name) {
-                                    icon.addClass(icon_name);
-                                }
-
-                                $(this).addClass('form-group row');
-                                label.parent().css('display', 'none');
-                                input.addClass(input.is('select') ? 'custom-select' : 'form-control')
-                                    .attr('placeholder', label.text())
-                                    .keypress(function(e) {
-                                        if (e.which === 13) {
-                                            console.log("submit highsec form from enter-key", e, e.target);
-                                            document.querySelector('#highsec-form').requestSubmit();
-                                        }
-                                    })
-                                    .before($('<span class="input-group-prepend">').append(icon))
-                                    .parent().addClass('input-group input-group-lg');
-                            });
-
-                            rcmail.triggerEvent('kolab2fa_style_elements', { form: $("#highsec-form") });
-                            document.querySelectorAll(".rcmlogin2famethodchooserrow span.input-group-prepend").forEach(e => e.parentElement.removeChild(e))
-                            document.querySelectorAll(".rcmlogin2famethodchooserrow input[type=hidden]").forEach(e => e.parentElement.removeChild(e))
-
-                            $(".rcmlogin2famethodchooserrow button").click(function (ev){
-                                console.log(ev);
-                                const method = ev.target.value;
-                                document.querySelectorAll(".rcmlogin2famethodchooserrow, .rcmlogin2famethodrow").forEach((r) => {
-                                    console.log(r)
-                                    r.classList.add("hidden");
-                                });
-
-                                document.querySelector(".rcmlogin2famethod" + method)?.classList.remove("hidden");
-                                document.querySelector("#rcmlogin2faother")?.classList.remove("hidden");
-                            });
-
-                            //$("#highsec-form").on('submit',
-                            document.querySelector('#highsec-form').addEventListener('submit', function(e) {
-                                e.preventDefault();
-                                console.log("#highsec-form submit", e);
-                                let formData = Array.from(e.currentTarget.elements).reduce(function(a, b) {
-                                    if (!["_task", "_action"].includes(b.name))
-                                        a[b.name] = b.value;
-                                    return a;
-                                }, {});
-
-                                console.log(formData);
-
-                                let lock = rcmail.set_busy(true, 'verifying');
-
-                                rcmail.http_post('plugin.kolab-2fa-verify', {
-                                    ...formData,
-                                    _session: 1,
-                                    _timestamp: highsec_dialog.data('timestamp')
-                                }, lock);
-
-                                return false;
-                            });
-
-                            $(event.target).closest('input.kolab2facode').keypress(function(e) {
-                                if (e.which === 13) {
-                                    $(e.target).closest('.ui-dialog').find('button.mainaction').click();
-                                }
-                            }).select();
-                        },
-                        close: function() {
-                            $(this).remove();
-                            highsec_dialog = null;
-                            highsec_call_stack.pop();
-                        }
-                    }
-                ).data('timestamp', time());
+                rcmail.http_post('plugin.kolab-2fa-highsec-enter', {});
 
                 return false;
             }
@@ -319,6 +211,127 @@ window.rcmail && rcmail.addEventListener('init', function() {
         // just trigger the callback
         func.call(this);
     }
+
+    rcmail.addEventListener('plugin.highsec_form', function ({html}) {
+        console.log(html);
+
+        highsec_dialog = rcmail.show_popup_dialog(
+            html,
+            rcmail.get_label('highsecurityrequired', 'kolab_2fa'),
+            [
+                {
+                    text: rcmail.gettext('enterhighsecurity', 'kolab_2fa'),
+                    click: function(e) {
+                        console.log("submit highsec form from button:", e, e.target);
+                        document.querySelector('#highsec-form').requestSubmit();
+                    },
+                    'class': 'mainaction save'
+                },
+                {
+                    text: rcmail.gettext('choose_other', 'kolab_2fa'),
+                    click: function(e) {
+                        document.querySelectorAll(".rcmlogin2famethodrow").forEach(r => r.classList.add("hidden"));
+                        document.querySelectorAll(".rcmlogin2famethodchooserrow, .rcmlogin2famethoddirect").forEach(r => r.classList.remove("hidden"));
+                    },
+                    'class': ''
+                },
+                {
+                    text: rcmail.gettext('cancel'),
+                    'class': 'cancel btn-danger',
+                    click: function() {
+                        highsec_dialog.dialog('close');
+                        window.location.reload();
+                    }
+                }
+            ],
+            {
+                open: function(event, ui) {
+                    // submit code on <Enter>
+                    console.log("opening highsec form ", event, ui);
+
+                    $(event.target).find('form table tr').each(function() {
+                        const input = $('input,select', this),
+                            label = $('label', this),
+                            icon_name = input.data('icon'),
+                            icon = $('<i>').attr('class', 'input-group-text icon ' + input.attr('name').replace('_', ''));
+
+                        if (icon_name) {
+                            icon.addClass(icon_name);
+                        }
+
+                        $(this).addClass('form-group row');
+                        label.parent().css('display', 'none');
+                        input.addClass(input.is('select') ? 'custom-select' : 'form-control')
+                            .attr('placeholder', label.text())
+                            .keypress(function(e) {
+                                if (e.which === 13) {
+                                    console.log("submit highsec form from enter-key", e, e.target);
+                                    document.querySelector('#highsec-form').requestSubmit();
+                                }
+                            })
+                            .before($('<span class="input-group-prepend">').append(icon))
+                            .parent().addClass('input-group input-group-lg');
+                    });
+
+                    rcmail.triggerEvent('kolab2fa_style_elements', { form: $("#highsec-form") });
+                    document.querySelectorAll(".rcmlogin2famethodchooserrow span.input-group-prepend").forEach(e => e.parentElement.removeChild(e))
+                    document.querySelectorAll(".rcmlogin2famethodchooserrow input[type=hidden]").forEach(e => e.parentElement.removeChild(e))
+
+                    $(".rcmlogin2famethodchooserrow button").click(function (ev){
+                        console.log(ev);
+                        const method = ev.target.value;
+                        document.querySelectorAll(".rcmlogin2famethodchooserrow, .rcmlogin2famethodrow").forEach((r) => {
+                            console.log(r)
+                            r.classList.add("hidden");
+                        });
+
+                        document.querySelector(".rcmlogin2famethod" + method)?.classList.remove("hidden");
+                        document.querySelector("#rcmlogin2faother")?.classList.remove("hidden");
+                    });
+
+                    //$("#highsec-form").on('submit',
+                    document.querySelector('#highsec-form').addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        if (highsec_lock) {
+                            console.log("highsec form already submitting");
+                            return false;
+                        }
+
+                        highsec_lock = true;
+                        console.log("#highsec-form submit", e);
+                        let formData = Array.from(e.currentTarget.elements).reduce(function(a, b) {
+                            if (!["_task", "_action"].includes(b.name))
+                                a[b.name] = b.value;
+                            return a;
+                        }, {});
+
+                        console.log(formData);
+
+                        let lock = rcmail.set_busy(true, 'verifying');
+
+                        rcmail.http_post('plugin.kolab-2fa-verify', {
+                            ...formData,
+                            _session: 1,
+                            _timestamp: highsec_dialog.data('timestamp')
+                        }, lock);
+
+                        return false;
+                    });
+
+                    // $(event.target).closest('input.kolab2facode').keypress(function(e) {
+                    //     if (e.which === 13) {
+                    //         $(e.target).closest('.ui-dialog').find('button.mainaction').click();
+                    //     }
+                    // }).select();
+                },
+                close: function() {
+                    $(this).remove();
+                    highsec_dialog = null;
+                    highsec_call_stack.pop();
+                }
+            }
+        ).data('timestamp', time());
+    });
 
     /**
      * @var

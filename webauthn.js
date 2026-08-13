@@ -106,7 +106,7 @@ window.rcmail && rcmail.addEventListener('kolab2fa_style_elements', async (event
             }
             again.addEventListener("click", () => window.location.reload());
 
-            document.querySelector("#login-form").replaceChildren(span, document.createElement("br"), again);
+            document.querySelector("#rcmlogin2fawebauthn").parentElement.replaceChildren(span, document.createElement("br"), again);
             return;
         }
         console.log(asseResp, event.form);

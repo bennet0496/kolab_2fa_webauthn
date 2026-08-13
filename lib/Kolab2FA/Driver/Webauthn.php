@@ -123,7 +123,7 @@ class Webauthn extends DriverBase
 
                 $this->plugin->include_script('https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js');
             } else {
-                $this->plugin->include_script('simplewebauthn_browser_13.2.2_index.umd.min.js');
+                $this->plugin->include_script('simplewebauthn_browser_13.3.2_index.umd.min.js');
             }
             $this->plugin->include_script('webauthn.js');
         }
