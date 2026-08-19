@@ -68,3 +68,5 @@ $labels['codeverificationfailed'] = 'Code verification for $method failed';
 $labels['highsecurityrequired'] = 'Additional Verification required';
 $labels['highsecuritydialog'] = 'To protect your account from security threats, like session theft or someone messing with your stuff while you\'re away, you need to confirm your credentials with the additional authentication factor:';
 $labels['enterhighsecurity'] = 'Confirm';
+
+$labels['machinetranslated'] = '';

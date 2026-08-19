@@ -36,3 +36,8 @@
     border-radius: .3em;
     font-weight: 600;
 }
+
+.machinetranslated {
+    margin: 1em;
+    font-style: italic;
+}

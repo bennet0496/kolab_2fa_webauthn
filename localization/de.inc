@@ -62,3 +62,5 @@ $labels['codeverificationfailed'] = 'Codeüberprüfung für $method fehlgeschalg
 $labels['highsecurityrequired'] = 'Zusätzliche Überprüfung erforderlich';
 $labels['highsecuritydialog'] = 'Um dein Konto vor Sicherheitsbedrohungen wie Sitzungsdiebstahl oder unbefugtem Zugriff auf deine Daten zu schützen, müsst Du Deine Anmeldedaten mit einem zusätzlichen Authentifizierungsfaktor bestätigen:';
 $labels['enterhighsecurity'] = 'Bestätigen';
+
+$labels['machinetranslated'] = '';
