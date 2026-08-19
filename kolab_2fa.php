@@ -28,6 +28,16 @@ use Kolab2FA\Storage\StorageBase;
 class kolab_2fa extends rcube_plugin
 {
 
+    public static function info(): array
+    {
+        return [
+            "name" => "Kolab 2-FA w/ Passkey extension",
+            "license" => "AGPL-3.0+",
+            "version" => json_decode(file_get_contents(__DIR__.'/composer.json'), true)['version'],
+            "uri" => "https://github.com/bennet0496/kolab_2fa_webauthn"
+        ];
+    }
+
     protected array $drivers = [];
     protected ?StorageBase $storage;
 
@@ -67,6 +77,8 @@ class kolab_2fa extends rcube_plugin
     public function startup($args)
     {
         $rcmail = rcmail::get_instance();
+
+        $rcmail->plugins->get_plugin('kolab_2fa');
 
         // register library namespace to autoloader
         $loader = include(INSTALL_PATH . 'vendor/autoload.php');
