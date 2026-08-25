@@ -574,9 +574,10 @@ class kolab_2fa extends rcube_plugin
         $factors = $this->get_factors();
 
         $attrib['id'] = 'kolab2fa-factors';
-        $table = new html_table(['cols' => 3]);
+        $table = new html_table(['cols' => 4]);
 
         $table->add_header('name', $this->gettext('factor'));
+        $table->add_header('type', $this->gettext('type'));
         $table->add_header('created', $this->gettext('created'));
         $table->add_header('actions', '');
 
@@ -586,10 +587,11 @@ class kolab_2fa extends rcube_plugin
 
             $table->add_row(["class" => $driver->method]);
             $table->add(["class" => "name"], $props['label'] ?? $this->gettext($driver->method));
+            $table->add(["class" => "type"], $this->gettext($driver->method));
             $table->add(["class" => "created"], $props['created']);
             $table->add(["class" => "actions buttons-cell"],
                 html::a(["class" => "button icon delete", "rel" => $factor],
-                    html::span(["class" => "inner"], $this->gettext('remove'))));
+                    html::span(["class" => "inner"], $this->gettext('delete'))));
         }
 
         return $table->show($attrib);
