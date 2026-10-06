@@ -67,30 +67,17 @@ class kolab_2fa extends rcube_plugin
     public function init(): void
     {
         $this->load_config();
-        $this->add_hook('startup', [$this, 'startup']);
         $this->add_hook('ready', [$this, 'ready']);
-    }
-
-    /**
-     * Startup hook
-     */
-    public function startup($args)
-    {
-        $rcmail = rcmail::get_instance();
-
-        $rcmail->plugins->get_plugin('kolab_2fa');
 
         // register library namespace to autoloader
         $loader = include(INSTALL_PATH . 'vendor/autoload.php');
         $loader->set('Kolab2FA', [$this->home . '/lib']);
-
-        return $args;
     }
 
     /**
      * @throws Exception
      */
-    protected function get_factors(): array
+    public function get_factors(): array
     {
         $rcmail = rcmail::get_instance();
 
