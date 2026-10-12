@@ -1,8 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-//const INSTALL_PATH = __DIR__ . '/../../../';
-const INSTALL_PATH = '/home/bbecker/Projects/roundcubemail-1.7.1/';
+const INSTALL_PATH = __DIR__ . '/../../../';
 ini_set('display_errors', 1);
 
 require_once INSTALL_PATH . 'program/include/clisetup.php';
