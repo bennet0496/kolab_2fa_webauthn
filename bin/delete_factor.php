@@ -28,10 +28,9 @@ if (count($argv) != 3) {
     exit(-1);
 }
 
-$sql_result = $db->query('SELECT * FROM ' . $db->table_name('users', true) . ' ORDER BY user_id');
+$sql_result = $db->query('SELECT * FROM ' . $db->table_name('users', true) . ' WHERE username = ? ORDER BY user_id', $argv[1]);
 
-if ($sql_result){
-    $sql_arr = $db->fetch_assoc($sql_result);
+if ($sql_result && ($sql_arr = $db->fetch_assoc($sql_result))){
     $user = new rcube_user($sql_arr['user_id'], $sql_arr);
     $prefs = $user->get_prefs();
 
@@ -47,6 +46,8 @@ if ($sql_result){
             printf("Error while deleting %s for user %s%s",$argv[2], $user->get_username(), PHP_EOL);
         }
     } else {
-        printf("Method %s not found for user %s", $argv[2], $user->get_username());
+        printf("Method %s not found for user %s%s", $argv[2], $user->get_username(), PHP_EOL);
     }
+} else {
+    printf("User %s not found or SQL Error (%s) %s", $argv[1], $db->is_error($sql_result), PHP_EOL);
 }
